@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Menna Arafat" />
+
+<meta name="date" content="2026-02-15" />
+
+<title>CrosstalkX: Mutual Information–Based Inference of Pathway Crosstalk</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">CrosstalkX: Mutual Information–Based
+Inference of Pathway Crosstalk</h1>
+<h4 class="author">Menna Arafat</h4>
+<h4 class="date">2026-02-15</h4>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>( </span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">fig.path =</span> <span class="st">&quot;fig/&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">fig.align =</span> <span class="st">&quot;center&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">collapse =</span> <span class="cn">TRUE</span>, <span class="at">comment =</span> <span class="st">&quot;&gt;&quot;</span>)</span></code></pre></div>
+<div id="under-the-hood-of-crosstalkx" class="section level2">
+<h2>Under the hood of CrosstalkX</h2>
+<p>Pathway enrichment approaches such as ORA and GSEA summarize
+transcriptomic changes, but enriched pathways are often interpreted in
+isolation. CrosstalkX adds a systems layer by quantifying functional
+coupling between terms (pathways and regulators) using expression data,
+a background interaction network, and mutual information (MI).</p>
+<p>The central idea is to move beyond “which pathways are enriched?”
+toward “which enriched pathways and regulators are coupled in the
+expression profile, and how strong is that coupling?” CrosstalkX does
+this by estimating MI on gene–gene edges, aggregating edge-level
+evidence to term–term scores, and assigning permutation-based
+significance.</p>
+</div>
+<div id="overview" class="section level2">
+<h2>Overview:</h2>
+<p>The tutorial proceeds in three stages. First, it prepares expression
+and DE-derived inputs. Second, it prioritizes genes by testing whether
+their network neighborhoods are enriched for DE genes more than expected
+by chance. Third, it performs enrichment on prioritized genes, then
+infers significant term–term crosstalk and visualizes the result.</p>
+</div>
+<div id="input" class="section level2">
+<h2>Input</h2>
+<p>CrosstalkX expects a two-column enrichment table: 1. Pathway/term
+identifier 2. Gene hits as a single string separated by “/” or “,” And
+expression matrix where row names are genes and column names are
+samples</p>
+<div id="installation" class="section level3">
+<h3>Installation</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a> <span class="co"># install.packages(&quot;devtools&quot;)</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a> <span class="co"># devtools::install_github(&quot;Menna-Arafat/CrosstalkX&quot;, </span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a> <span class="co"># build_vignettes = TRUE, dependencies = TRUE)</span></span></code></pre></div>
+<p>Load libraries and example data</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co">#load lib</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">library</span>(CrosstalkX)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">library</span>(tibble)</span></code></pre></div>
+</div>
+<div id="module0-data-preparation" class="section level3">
+<h3>Module0: Data preparation</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Expression matrix is expected as genes × samples, with gene IDs in rownames.</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># group_names is used downstream to support group-aware preprocessing (e.g., handling NAs).</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>expr <span class="ot">=</span> CrosstalkX<span class="sc">::</span>expr <span class="sc">|&gt;</span> tibble<span class="sc">::</span><span class="fu">column_to_rownames</span>(<span class="st">&quot;V1&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>group_names <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Normal&quot;</span>, <span class="st">&quot;Tumor&quot;</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co"># Differential expression results are used in two ways:</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co"># 1) fold-change values (linear FC) for pathway enrichment with directionality</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co"># 2) t-statistics for TF activity inference based on downstream targets</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>de_res <span class="ot">=</span> CrosstalkX<span class="sc">::</span>de_res <span class="sc">|&gt;</span> tibble<span class="sc">::</span><span class="fu">column_to_rownames</span>(<span class="st">&quot;V1&quot;</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co"># Convert log2 fold change to linear fold change for enrichment inputs that use FC values.</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>de_res<span class="sc">$</span>FC <span class="ot">=</span> <span class="dv">2</span> <span class="sc">^</span> de_res<span class="sc">$</span>log2FoldChange</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>de_fc <span class="ot">=</span> <span class="fu">setNames</span>(de_res<span class="sc">$</span>FC, <span class="fu">row.names</span>(de_res))</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co"># Define DE genes for the gene-prioritization step.</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co"># These represent the &quot;labels&quot; whose local enrichment in the network will be tested.</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>de_genes <span class="ot">=</span> de_res <span class="sc">|&gt;</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>            dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="fu">abs</span>(log2FoldChange) <span class="sc">&gt;=</span> <span class="fu">log2</span>(<span class="dv">2</span>), padj <span class="sc">&lt;=</span> <span class="fl">0.01</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>            <span class="fu">row.names</span>()</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co"># Compute a signed statistic for TF enrichment.</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co"># The t-statistic captures both effect direction and uncertainty (via the SE).</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>de_res<span class="sc">$</span>t_stat <span class="ot">=</span> de_res<span class="sc">$</span>log2FoldChange <span class="sc">/</span> de_res<span class="sc">$</span>lfcSE</span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>tstat_named <span class="ot">=</span> <span class="fu">setNames</span>(de_res<span class="sc">$</span>t_stat, <span class="fu">rownames</span>(de_res))</span></code></pre></div>
+</div>
+<div id="module1-gene-prioritization-by-de-neighborhood-enrichment" class="section level3">
+<h3>Module1: Gene prioritization by DE-neighborhood enrichment</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># retrieve_net() provides the interaction scaffold used to define each gene&#39;s neighborhood.</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co"># If net is not supplied, CrosstalkX loads its bundled default network.</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>net <span class="ot">=</span> <span class="fu">retrieve_net</span>()</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co"># prioritize_de() tests each gene of interest for an unusually high number of DE neighbors.</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co"># It uses permutation to build an empirical null distribution, then returns significant genes.</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>myres <span class="ot">=</span> <span class="fu">prioritize_de</span>(<span class="at">genes_oi =</span> <span class="fu">row.names</span>(expr), <span class="at">de_genes =</span> de_genes, <span class="at">net =</span> net)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>top_de<span class="ot">=</span> myres<span class="sc">$</span>sig</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="fu">head</span>(top_de, <span class="dv">100</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="sc">&gt;</span>              gene obs_de_neighbors null_mean   null_sd z_empirical       pval</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="sc">&gt;</span> GAPDH       GAPDH              <span class="dv">456</span>    <span class="fl">416.91</span> <span class="fl">15.396507</span>    <span class="fl">2.538888</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="sc">&gt;</span> SP1           SP1              <span class="dv">384</span>    <span class="fl">317.30</span> <span class="fl">13.185928</span>    <span class="fl">5.058423</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="sc">&gt;</span> FN1           FN1              <span class="dv">298</span>    <span class="fl">220.50</span> <span class="fl">10.424815</span>    <span class="fl">7.434185</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="sc">&gt;</span> CD4           CD4              <span class="dv">289</span>    <span class="fl">199.80</span>  <span class="fl">9.718253</span>    <span class="fl">9.178604</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="sc">&gt;</span> HIF1A       HIF1A              <span class="dv">277</span>    <span class="fl">248.16</span> <span class="fl">10.944045</span>    <span class="fl">2.635223</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="sc">&gt;</span> TGFB1       TGFB1              <span class="dv">239</span>    <span class="fl">181.17</span>  <span class="fl">9.452759</span>    <span class="fl">6.117791</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="sc">&gt;</span> FOS           FOS              <span class="dv">238</span>    <span class="fl">192.84</span> <span class="fl">10.508986</span>    <span class="fl">4.297275</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="sc">&gt;</span> MMP9         MMP9              <span class="dv">232</span>    <span class="fl">168.29</span>  <span class="fl">8.299075</span>    <span class="fl">7.676759</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="sc">&gt;</span> CCNB1       CCNB1              <span class="dv">222</span>    <span class="fl">158.48</span> <span class="fl">10.798878</span>    <span class="fl">5.882093</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="sc">&gt;</span> EGF           EGF              <span class="dv">222</span>    <span class="fl">181.60</span> <span class="fl">10.060424</span>    <span class="fl">4.015736</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="sc">&gt;</span> CDC20       CDC20              <span class="dv">218</span>    <span class="fl">140.00</span>  <span class="fl">8.436333</span>    <span class="fl">9.245723</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="sc">&gt;</span> CREB1       CREB1              <span class="dv">217</span>    <span class="fl">185.33</span>  <span class="fl">9.909749</span>    <span class="fl">3.195843</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="sc">&gt;</span> CCND1       CCND1              <span class="dv">213</span>    <span class="fl">192.77</span> <span class="fl">10.741080</span>    <span class="fl">1.883423</span> <span class="fl">0.03960396</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="sc">&gt;</span> TOP2A       TOP2A              <span class="dv">212</span>    <span class="fl">141.00</span>  <span class="fl">9.409859</span>    <span class="fl">7.545277</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="sc">&gt;</span> AURKA       AURKA              <span class="dv">211</span>    <span class="fl">132.08</span>  <span class="fl">8.625403</span>    <span class="fl">9.149717</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="sc">&gt;</span> PLK1         PLK1              <span class="dv">208</span>    <span class="fl">155.76</span>  <span class="fl">8.818163</span>    <span class="fl">5.924136</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="sc">&gt;</span> CDCA8       CDCA8              <span class="dv">200</span>    <span class="fl">131.32</span>  <span class="fl">8.222757</span>    <span class="fl">8.352429</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="sc">&gt;</span> AURKB       AURKB              <span class="dv">198</span>    <span class="fl">129.57</span>  <span class="fl">8.673954</span>    <span class="fl">7.889136</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="sc">&gt;</span> BIRC5       BIRC5              <span class="dv">195</span>    <span class="fl">113.82</span>  <span class="fl">7.873212</span>   <span class="fl">10.310912</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="sc">&gt;</span> TLR4         TLR4              <span class="dv">194</span>    <span class="fl">149.68</span>  <span class="fl">8.146239</span>    <span class="fl">5.440547</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="sc">&gt;</span> BUB1B       BUB1B              <span class="dv">192</span>    <span class="fl">115.07</span>  <span class="fl">8.306326</span>    <span class="fl">9.261616</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="sc">&gt;</span> KIF11       KIF11              <span class="dv">190</span>    <span class="fl">104.71</span>  <span class="fl">7.878234</span>   <span class="fl">10.826031</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="sc">&gt;</span> CEBPB       CEBPB              <span class="dv">190</span>    <span class="fl">164.22</span>  <span class="fl">9.296008</span>    <span class="fl">2.773234</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="sc">&gt;</span> FOXM1       FOXM1              <span class="dv">187</span>    <span class="fl">107.98</span>  <span class="fl">7.714580</span>   <span class="fl">10.242942</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="sc">&gt;</span> KIF23       KIF23              <span class="dv">185</span>    <span class="fl">105.66</span>  <span class="fl">8.033038</span>    <span class="fl">9.876712</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="sc">&gt;</span> CALM3       CALM3              <span class="dv">185</span>    <span class="fl">158.64</span>  <span class="fl">9.838617</span>    <span class="fl">2.679238</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="sc">&gt;</span> CCNB2       CCNB2              <span class="dv">184</span>    <span class="fl">105.28</span>  <span class="fl">8.026572</span>    <span class="fl">9.807425</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="sc">&gt;</span> CDC6         CDC6              <span class="dv">184</span>    <span class="fl">112.23</span>  <span class="fl">8.653667</span>    <span class="fl">8.293594</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="sc">&gt;</span> ERBB2       ERBB2              <span class="dv">184</span>    <span class="fl">160.64</span>  <span class="fl">9.474602</span>    <span class="fl">2.465539</span> <span class="fl">0.03960396</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="sc">&gt;</span> BUB1         BUB1              <span class="dv">180</span>     <span class="fl">97.86</span>  <span class="fl">7.388252</span>   <span class="fl">11.117651</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="sc">&gt;</span> EXO1         EXO1              <span class="dv">179</span>    <span class="fl">111.51</span>  <span class="fl">8.843756</span>    <span class="fl">7.631373</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="sc">&gt;</span> PXDN         PXDN              <span class="dv">179</span>    <span class="fl">144.25</span>  <span class="fl">8.976259</span>    <span class="fl">3.871323</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="sc">&gt;</span> MAD2L1     MAD2L1              <span class="dv">178</span>    <span class="fl">114.91</span>  <span class="fl">8.894551</span>    <span class="fl">7.093107</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="sc">&gt;</span> CALML5     CALML5              <span class="dv">177</span>    <span class="fl">145.24</span>  <span class="fl">9.922040</span>    <span class="fl">3.200955</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="sc">&gt;</span> CDK2         CDK2              <span class="dv">177</span>    <span class="fl">154.62</span>  <span class="fl">9.605112</span>    <span class="fl">2.330009</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="sc">&gt;</span> PECAM1     PECAM1              <span class="dv">170</span>    <span class="fl">120.74</span>  <span class="fl">7.144426</span>    <span class="fl">6.894885</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="sc">&gt;</span> KIF2C       KIF2C              <span class="dv">168</span>     <span class="fl">85.07</span>  <span class="fl">6.284911</span>   <span class="fl">13.195096</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="sc">&gt;</span> KIF20A     KIF20A              <span class="dv">168</span>     <span class="fl">86.08</span>  <span class="fl">6.445858</span>   <span class="fl">12.708936</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="sc">&gt;</span> ANLN         ANLN              <span class="dv">168</span>     <span class="fl">95.44</span>  <span class="fl">7.906422</span>    <span class="fl">9.177349</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="sc">&gt;</span> ITGAM       ITGAM              <span class="dv">168</span>    <span class="fl">115.86</span>  <span class="fl">8.686481</span>    <span class="fl">6.002431</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="sc">&gt;</span> CD34         CD34              <span class="dv">166</span>    <span class="fl">115.39</span>  <span class="fl">7.462898</span>    <span class="fl">6.781548</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="sc">&gt;</span> ICAM1       ICAM1              <span class="dv">166</span>    <span class="fl">124.15</span>  <span class="fl">8.037004</span>    <span class="fl">5.207164</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="sc">&gt;</span> E2F1         E2F1              <span class="dv">165</span>    <span class="fl">147.13</span>  <span class="fl">9.480075</span>    <span class="fl">1.885006</span> <span class="fl">0.04950495</span></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="sc">&gt;</span> RRM2         RRM2              <span class="dv">162</span>     <span class="fl">90.29</span>  <span class="fl">7.785372</span>    <span class="fl">9.210863</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="sc">&gt;</span> UBE2C       UBE2C              <span class="dv">162</span>    <span class="fl">104.13</span>  <span class="fl">7.975537</span>    <span class="fl">7.255938</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="sc">&gt;</span> NUF2         NUF2              <span class="dv">160</span>     <span class="fl">75.44</span>  <span class="fl">6.478122</span>   <span class="fl">13.053166</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="sc">&gt;</span> MKI67       MKI67              <span class="dv">160</span>     <span class="fl">74.61</span>  <span class="fl">7.020741</span>   <span class="fl">12.162533</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="sc">&gt;</span> ESPL1       ESPL1              <span class="dv">160</span>     <span class="fl">92.61</span>  <span class="fl">7.265381</span>    <span class="fl">9.275495</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="sc">&gt;</span> FEN1         FEN1              <span class="dv">160</span>    <span class="fl">105.50</span>  <span class="fl">7.944886</span>    <span class="fl">6.859759</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="sc">&gt;</span> EGR1         EGR1              <span class="dv">159</span>    <span class="fl">137.78</span>  <span class="fl">8.778509</span>    <span class="fl">2.417267</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="sc">&gt;</span> TTK           TTK              <span class="dv">157</span>     <span class="fl">72.09</span>  <span class="fl">6.993641</span>   <span class="fl">12.141030</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a><span class="sc">&gt;</span> MMP2         MMP2              <span class="dv">157</span>    <span class="fl">113.89</span>  <span class="fl">7.771867</span>    <span class="fl">5.546930</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-63"><a href="#cb5-63" tabindex="-1"></a><span class="sc">&gt;</span> FOXO1       FOXO1              <span class="dv">157</span>    <span class="fl">139.48</span>  <span class="fl">7.709996</span>    <span class="fl">2.272375</span> <span class="fl">0.02970297</span></span>
+<span id="cb5-64"><a href="#cb5-64" tabindex="-1"></a><span class="sc">&gt;</span> NDC80       NDC80              <span class="dv">154</span>     <span class="fl">74.40</span>  <span class="fl">6.466698</span>   <span class="fl">12.309219</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-65"><a href="#cb5-65" tabindex="-1"></a><span class="sc">&gt;</span> MCM10       MCM10              <span class="dv">154</span>     <span class="fl">75.48</span>  <span class="fl">7.178081</span>   <span class="fl">10.938857</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-66"><a href="#cb5-66" tabindex="-1"></a><span class="sc">&gt;</span> DLGAP5     DLGAP5              <span class="dv">153</span>     <span class="fl">66.39</span>  <span class="fl">6.256948</span>   <span class="fl">13.842213</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-67"><a href="#cb5-67" tabindex="-1"></a><span class="sc">&gt;</span> COL1A1     COL1A1              <span class="dv">153</span>    <span class="fl">107.73</span>  <span class="fl">7.603634</span>    <span class="fl">5.953732</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-68"><a href="#cb5-68" tabindex="-1"></a><span class="sc">&gt;</span> NEK2         NEK2              <span class="dv">152</span>     <span class="fl">79.18</span>  <span class="fl">6.440685</span>   <span class="fl">11.306251</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-69"><a href="#cb5-69" tabindex="-1"></a><span class="sc">&gt;</span> SOX9         SOX9              <span class="dv">151</span>    <span class="fl">101.47</span>  <span class="fl">7.521625</span>    <span class="fl">6.585013</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-70"><a href="#cb5-70" tabindex="-1"></a><span class="sc">&gt;</span> RACGAP1   RACGAP1              <span class="dv">149</span>     <span class="fl">80.63</span>  <span class="fl">6.817469</span>   <span class="fl">10.028649</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-71"><a href="#cb5-71" tabindex="-1"></a><span class="sc">&gt;</span> APOE         APOE              <span class="dv">149</span>    <span class="fl">117.03</span>  <span class="fl">7.407961</span>    <span class="fl">4.315628</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-72"><a href="#cb5-72" tabindex="-1"></a><span class="sc">&gt;</span> CDK4         CDK4              <span class="dv">149</span>    <span class="fl">128.35</span>  <span class="fl">9.197469</span>    <span class="fl">2.245183</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-73"><a href="#cb5-73" tabindex="-1"></a><span class="sc">&gt;</span> ITGB1       ITGB1              <span class="dv">149</span>    <span class="fl">133.57</span>  <span class="fl">9.225848</span>    <span class="fl">1.672475</span> <span class="fl">0.04950495</span></span>
+<span id="cb5-74"><a href="#cb5-74" tabindex="-1"></a><span class="sc">&gt;</span> CDT1         CDT1              <span class="dv">148</span>     <span class="fl">87.13</span>  <span class="fl">6.995893</span>    <span class="fl">8.700819</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-75"><a href="#cb5-75" tabindex="-1"></a><span class="sc">&gt;</span> KDR           KDR              <span class="dv">148</span>    <span class="fl">117.32</span>  <span class="fl">7.532931</span>    <span class="fl">4.072784</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-76"><a href="#cb5-76" tabindex="-1"></a><span class="sc">&gt;</span> KIF4A       KIF4A              <span class="dv">147</span>     <span class="fl">72.86</span>  <span class="fl">6.010126</span>   <span class="fl">12.335848</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-77"><a href="#cb5-77" tabindex="-1"></a><span class="sc">&gt;</span> PTTG1       PTTG1              <span class="dv">146</span>     <span class="fl">74.42</span>  <span class="fl">6.592282</span>   <span class="fl">10.858152</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-78"><a href="#cb5-78" tabindex="-1"></a><span class="sc">&gt;</span> MELK         MELK              <span class="dv">145</span>     <span class="fl">59.81</span>  <span class="fl">6.227497</span>   <span class="fl">13.679654</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-79"><a href="#cb5-79" tabindex="-1"></a><span class="sc">&gt;</span> MCM3         MCM3              <span class="dv">145</span>     <span class="fl">85.89</span>  <span class="fl">7.870024</span>    <span class="fl">7.510778</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-80"><a href="#cb5-80" tabindex="-1"></a><span class="sc">&gt;</span> GATA3       GATA3              <span class="dv">145</span>    <span class="fl">107.83</span>  <span class="fl">7.908639</span>    <span class="fl">4.699924</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-81"><a href="#cb5-81" tabindex="-1"></a><span class="sc">&gt;</span> THBS1       THBS1              <span class="dv">144</span>    <span class="fl">108.00</span>  <span class="fl">6.894589</span>    <span class="fl">5.221486</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-82"><a href="#cb5-82" tabindex="-1"></a><span class="sc">&gt;</span> TPX2         TPX2              <span class="dv">143</span>     <span class="fl">65.87</span>  <span class="fl">5.679406</span>   <span class="fl">13.580645</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-83"><a href="#cb5-83" tabindex="-1"></a><span class="sc">&gt;</span> CXCL10     CXCL10              <span class="dv">143</span>     <span class="fl">89.27</span>  <span class="fl">6.642160</span>    <span class="fl">8.089237</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-84"><a href="#cb5-84" tabindex="-1"></a><span class="sc">&gt;</span> LEP           LEP              <span class="dv">143</span>    <span class="fl">103.46</span>  <span class="fl">7.479831</span>    <span class="fl">5.286215</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-85"><a href="#cb5-85" tabindex="-1"></a><span class="sc">&gt;</span> CD36         CD36              <span class="dv">143</span>    <span class="fl">119.48</span>  <span class="fl">8.432118</span>    <span class="fl">2.789335</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-86"><a href="#cb5-86" tabindex="-1"></a><span class="sc">&gt;</span> CEBPA       CEBPA              <span class="dv">143</span>    <span class="fl">126.36</span>  <span class="fl">8.814038</span>    <span class="fl">1.887897</span> <span class="fl">0.04950495</span></span>
+<span id="cb5-87"><a href="#cb5-87" tabindex="-1"></a><span class="sc">&gt;</span> MCM6         MCM6              <span class="dv">142</span>     <span class="fl">81.95</span>  <span class="fl">7.861651</span>    <span class="fl">7.638345</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-88"><a href="#cb5-88" tabindex="-1"></a><span class="sc">&gt;</span> TK1           TK1              <span class="dv">141</span>     <span class="fl">74.24</span>  <span class="fl">6.276652</span>   <span class="fl">10.636243</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-89"><a href="#cb5-89" tabindex="-1"></a><span class="sc">&gt;</span> CDCA5       CDCA5              <span class="dv">140</span>     <span class="fl">59.08</span>  <span class="fl">5.804352</span>   <span class="fl">13.941263</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-90"><a href="#cb5-90" tabindex="-1"></a><span class="sc">&gt;</span> SMC4         SMC4              <span class="dv">140</span>     <span class="fl">76.26</span>  <span class="fl">6.857305</span>    <span class="fl">9.295197</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-91"><a href="#cb5-91" tabindex="-1"></a><span class="sc">&gt;</span> MCM5         MCM5              <span class="dv">140</span>     <span class="fl">86.16</span>  <span class="fl">7.901822</span>    <span class="fl">6.813619</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-92"><a href="#cb5-92" tabindex="-1"></a><span class="sc">&gt;</span> FBXO5       FBXO5              <span class="dv">140</span>     <span class="fl">97.91</span>  <span class="fl">7.086899</span>    <span class="fl">5.939128</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-93"><a href="#cb5-93" tabindex="-1"></a><span class="sc">&gt;</span> TRIP13     TRIP13              <span class="dv">139</span>     <span class="fl">66.94</span>  <span class="fl">6.608565</span>   <span class="fl">10.904031</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-94"><a href="#cb5-94" tabindex="-1"></a><span class="sc">&gt;</span> VCAM1       VCAM1              <span class="dv">139</span>     <span class="fl">95.55</span>  <span class="fl">7.451357</span>    <span class="fl">5.831152</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-95"><a href="#cb5-95" tabindex="-1"></a><span class="sc">&gt;</span> SPAG5       SPAG5              <span class="dv">138</span>     <span class="fl">62.34</span>  <span class="fl">6.018859</span>   <span class="fl">12.570488</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-96"><a href="#cb5-96" tabindex="-1"></a><span class="sc">&gt;</span> PCNA         PCNA              <span class="dv">137</span>    <span class="fl">109.11</span>  <span class="fl">7.928844</span>    <span class="fl">3.517537</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-97"><a href="#cb5-97" tabindex="-1"></a><span class="sc">&gt;</span> NCAPH       NCAPH              <span class="dv">136</span>     <span class="fl">61.31</span>  <span class="fl">6.235602</span>   <span class="fl">11.977994</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-98"><a href="#cb5-98" tabindex="-1"></a><span class="sc">&gt;</span> CEP55       CEP55              <span class="dv">135</span>     <span class="fl">62.07</span>  <span class="fl">5.983572</span>   <span class="fl">12.188372</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-99"><a href="#cb5-99" tabindex="-1"></a><span class="sc">&gt;</span> NCAPG       NCAPG              <span class="dv">135</span>     <span class="fl">62.59</span>  <span class="fl">6.770547</span>   <span class="fl">10.694853</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-100"><a href="#cb5-100" tabindex="-1"></a><span class="sc">&gt;</span> MYBL2       MYBL2              <span class="dv">135</span>     <span class="fl">82.12</span>  <span class="fl">7.973795</span>    <span class="fl">6.631723</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-101"><a href="#cb5-101" tabindex="-1"></a><span class="sc">&gt;</span> RRM1         RRM1              <span class="dv">135</span>     <span class="fl">93.34</span>  <span class="fl">7.650470</span>    <span class="fl">5.445417</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-102"><a href="#cb5-102" tabindex="-1"></a><span class="sc">&gt;</span> HJURP       HJURP              <span class="dv">134</span>     <span class="fl">58.74</span>  <span class="fl">5.575234</span>   <span class="fl">13.498985</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-103"><a href="#cb5-103" tabindex="-1"></a><span class="sc">&gt;</span> IL7R         IL7R              <span class="dv">134</span>     <span class="fl">81.52</span>  <span class="fl">6.456506</span>    <span class="fl">8.128236</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-104"><a href="#cb5-104" tabindex="-1"></a><span class="sc">&gt;</span> SERPINE1 SERPINE1              <span class="dv">134</span>     <span class="fl">92.12</span>  <span class="fl">6.490521</span>    <span class="fl">6.452486</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-105"><a href="#cb5-105" tabindex="-1"></a><span class="sc">&gt;</span> UHRF1       UHRF1              <span class="dv">133</span>     <span class="fl">65.92</span>  <span class="fl">6.373366</span>   <span class="fl">10.525050</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-106"><a href="#cb5-106" tabindex="-1"></a><span class="sc">&gt;</span> KPNA2       KPNA2              <span class="dv">131</span>     <span class="fl">84.89</span>  <span class="fl">6.786640</span>    <span class="fl">6.794231</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-107"><a href="#cb5-107" tabindex="-1"></a><span class="sc">&gt;</span> CDCA3       CDCA3              <span class="dv">129</span>     <span class="fl">54.44</span>  <span class="fl">5.492548</span>   <span class="fl">13.574757</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-108"><a href="#cb5-108" tabindex="-1"></a><span class="sc">&gt;</span> DTL           DTL              <span class="dv">129</span>     <span class="fl">78.15</span>  <span class="fl">6.846624</span>    <span class="fl">7.427018</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-109"><a href="#cb5-109" tabindex="-1"></a><span class="sc">&gt;</span> RAD51AP1 RAD51AP1              <span class="dv">128</span>     <span class="fl">61.18</span>  <span class="fl">6.171587</span>   <span class="fl">10.827037</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-110"><a href="#cb5-110" tabindex="-1"></a><span class="sc">&gt;</span> KIFC1       KIFC1              <span class="dv">128</span>     <span class="fl">64.80</span>  <span class="fl">6.159496</span>   <span class="fl">10.260579</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-111"><a href="#cb5-111" tabindex="-1"></a><span class="sc">&gt;</span>               padj</span>
+<span id="cb5-112"><a href="#cb5-112" tabindex="-1"></a><span class="sc">&gt;</span> GAPDH    <span class="fl">0.2217696</span></span>
+<span id="cb5-113"><a href="#cb5-113" tabindex="-1"></a><span class="sc">&gt;</span> SP1      <span class="fl">0.1384965</span></span>
+<span id="cb5-114"><a href="#cb5-114" tabindex="-1"></a><span class="sc">&gt;</span> FN1      <span class="fl">0.1384965</span></span>
+<span id="cb5-115"><a href="#cb5-115" tabindex="-1"></a><span class="sc">&gt;</span> CD4      <span class="fl">0.1384965</span></span>
+<span id="cb5-116"><a href="#cb5-116" tabindex="-1"></a><span class="sc">&gt;</span> HIF1A    <span class="fl">0.1384965</span></span>
+<span id="cb5-117"><a href="#cb5-117" tabindex="-1"></a><span class="sc">&gt;</span> TGFB1    <span class="fl">0.1384965</span></span>
+<span id="cb5-118"><a href="#cb5-118" tabindex="-1"></a><span class="sc">&gt;</span> FOS      <span class="fl">0.1384965</span></span>
+<span id="cb5-119"><a href="#cb5-119" tabindex="-1"></a><span class="sc">&gt;</span> MMP9     <span class="fl">0.1384965</span></span>
+<span id="cb5-120"><a href="#cb5-120" tabindex="-1"></a><span class="sc">&gt;</span> CCNB1    <span class="fl">0.1384965</span></span>
+<span id="cb5-121"><a href="#cb5-121" tabindex="-1"></a><span class="sc">&gt;</span> EGF      <span class="fl">0.1384965</span></span>
+<span id="cb5-122"><a href="#cb5-122" tabindex="-1"></a><span class="sc">&gt;</span> CDC20    <span class="fl">0.1384965</span></span>
+<span id="cb5-123"><a href="#cb5-123" tabindex="-1"></a><span class="sc">&gt;</span> CREB1    <span class="fl">0.1384965</span></span>
+<span id="cb5-124"><a href="#cb5-124" tabindex="-1"></a><span class="sc">&gt;</span> CCND1    <span class="fl">0.3793191</span></span>
+<span id="cb5-125"><a href="#cb5-125" tabindex="-1"></a><span class="sc">&gt;</span> TOP2A    <span class="fl">0.1384965</span></span>
+<span id="cb5-126"><a href="#cb5-126" tabindex="-1"></a><span class="sc">&gt;</span> AURKA    <span class="fl">0.1384965</span></span>
+<span id="cb5-127"><a href="#cb5-127" tabindex="-1"></a><span class="sc">&gt;</span> PLK1     <span class="fl">0.1384965</span></span>
+<span id="cb5-128"><a href="#cb5-128" tabindex="-1"></a><span class="sc">&gt;</span> CDCA8    <span class="fl">0.1384965</span></span>
+<span id="cb5-129"><a href="#cb5-129" tabindex="-1"></a><span class="sc">&gt;</span> AURKB    <span class="fl">0.1384965</span></span>
+<span id="cb5-130"><a href="#cb5-130" tabindex="-1"></a><span class="sc">&gt;</span> BIRC5    <span class="fl">0.1384965</span></span>
+<span id="cb5-131"><a href="#cb5-131" tabindex="-1"></a><span class="sc">&gt;</span> TLR4     <span class="fl">0.1384965</span></span>
+<span id="cb5-132"><a href="#cb5-132" tabindex="-1"></a><span class="sc">&gt;</span> BUB1B    <span class="fl">0.1384965</span></span>
+<span id="cb5-133"><a href="#cb5-133" tabindex="-1"></a><span class="sc">&gt;</span> KIF11    <span class="fl">0.1384965</span></span>
+<span id="cb5-134"><a href="#cb5-134" tabindex="-1"></a><span class="sc">&gt;</span> CEBPB    <span class="fl">0.1384965</span></span>
+<span id="cb5-135"><a href="#cb5-135" tabindex="-1"></a><span class="sc">&gt;</span> FOXM1    <span class="fl">0.1384965</span></span>
+<span id="cb5-136"><a href="#cb5-136" tabindex="-1"></a><span class="sc">&gt;</span> KIF23    <span class="fl">0.1384965</span></span>
+<span id="cb5-137"><a href="#cb5-137" tabindex="-1"></a><span class="sc">&gt;</span> CALM3    <span class="fl">0.2217696</span></span>
+<span id="cb5-138"><a href="#cb5-138" tabindex="-1"></a><span class="sc">&gt;</span> CCNB2    <span class="fl">0.1384965</span></span>
+<span id="cb5-139"><a href="#cb5-139" tabindex="-1"></a><span class="sc">&gt;</span> CDC6     <span class="fl">0.1384965</span></span>
+<span id="cb5-140"><a href="#cb5-140" tabindex="-1"></a><span class="sc">&gt;</span> ERBB2    <span class="fl">0.3793191</span></span>
+<span id="cb5-141"><a href="#cb5-141" tabindex="-1"></a><span class="sc">&gt;</span> BUB1     <span class="fl">0.1384965</span></span>
+<span id="cb5-142"><a href="#cb5-142" tabindex="-1"></a><span class="sc">&gt;</span> EXO1     <span class="fl">0.1384965</span></span>
+<span id="cb5-143"><a href="#cb5-143" tabindex="-1"></a><span class="sc">&gt;</span> PXDN     <span class="fl">0.1384965</span></span>
+<span id="cb5-144"><a href="#cb5-144" tabindex="-1"></a><span class="sc">&gt;</span> MAD2L1   <span class="fl">0.1384965</span></span>
+<span id="cb5-145"><a href="#cb5-145" tabindex="-1"></a><span class="sc">&gt;</span> CALML5   <span class="fl">0.1384965</span></span>
+<span id="cb5-146"><a href="#cb5-146" tabindex="-1"></a><span class="sc">&gt;</span> CDK2     <span class="fl">0.2217696</span></span>
+<span id="cb5-147"><a href="#cb5-147" tabindex="-1"></a><span class="sc">&gt;</span> PECAM1   <span class="fl">0.1384965</span></span>
+<span id="cb5-148"><a href="#cb5-148" tabindex="-1"></a><span class="sc">&gt;</span> KIF2C    <span class="fl">0.1384965</span></span>
+<span id="cb5-149"><a href="#cb5-149" tabindex="-1"></a><span class="sc">&gt;</span> KIF20A   <span class="fl">0.1384965</span></span>
+<span id="cb5-150"><a href="#cb5-150" tabindex="-1"></a><span class="sc">&gt;</span> ANLN     <span class="fl">0.1384965</span></span>
+<span id="cb5-151"><a href="#cb5-151" tabindex="-1"></a><span class="sc">&gt;</span> ITGAM    <span class="fl">0.1384965</span></span>
+<span id="cb5-152"><a href="#cb5-152" tabindex="-1"></a><span class="sc">&gt;</span> CD34     <span class="fl">0.1384965</span></span>
+<span id="cb5-153"><a href="#cb5-153" tabindex="-1"></a><span class="sc">&gt;</span> ICAM1    <span class="fl">0.1384965</span></span>
+<span id="cb5-154"><a href="#cb5-154" tabindex="-1"></a><span class="sc">&gt;</span> E2F1     <span class="fl">0.4413048</span></span>
+<span id="cb5-155"><a href="#cb5-155" tabindex="-1"></a><span class="sc">&gt;</span> RRM2     <span class="fl">0.1384965</span></span>
+<span id="cb5-156"><a href="#cb5-156" tabindex="-1"></a><span class="sc">&gt;</span> UBE2C    <span class="fl">0.1384965</span></span>
+<span id="cb5-157"><a href="#cb5-157" tabindex="-1"></a><span class="sc">&gt;</span> NUF2     <span class="fl">0.1384965</span></span>
+<span id="cb5-158"><a href="#cb5-158" tabindex="-1"></a><span class="sc">&gt;</span> MKI67    <span class="fl">0.1384965</span></span>
+<span id="cb5-159"><a href="#cb5-159" tabindex="-1"></a><span class="sc">&gt;</span> ESPL1    <span class="fl">0.1384965</span></span>
+<span id="cb5-160"><a href="#cb5-160" tabindex="-1"></a><span class="sc">&gt;</span> FEN1     <span class="fl">0.1384965</span></span>
+<span id="cb5-161"><a href="#cb5-161" tabindex="-1"></a><span class="sc">&gt;</span> EGR1     <span class="fl">0.2217696</span></span>
+<span id="cb5-162"><a href="#cb5-162" tabindex="-1"></a><span class="sc">&gt;</span> TTK      <span class="fl">0.1384965</span></span>
+<span id="cb5-163"><a href="#cb5-163" tabindex="-1"></a><span class="sc">&gt;</span> MMP2     <span class="fl">0.1384965</span></span>
+<span id="cb5-164"><a href="#cb5-164" tabindex="-1"></a><span class="sc">&gt;</span> FOXO1    <span class="fl">0.3042513</span></span>
+<span id="cb5-165"><a href="#cb5-165" tabindex="-1"></a><span class="sc">&gt;</span> NDC80    <span class="fl">0.1384965</span></span>
+<span id="cb5-166"><a href="#cb5-166" tabindex="-1"></a><span class="sc">&gt;</span> MCM10    <span class="fl">0.1384965</span></span>
+<span id="cb5-167"><a href="#cb5-167" tabindex="-1"></a><span class="sc">&gt;</span> DLGAP5   <span class="fl">0.1384965</span></span>
+<span id="cb5-168"><a href="#cb5-168" tabindex="-1"></a><span class="sc">&gt;</span> COL1A1   <span class="fl">0.1384965</span></span>
+<span id="cb5-169"><a href="#cb5-169" tabindex="-1"></a><span class="sc">&gt;</span> NEK2     <span class="fl">0.1384965</span></span>
+<span id="cb5-170"><a href="#cb5-170" tabindex="-1"></a><span class="sc">&gt;</span> SOX9     <span class="fl">0.1384965</span></span>
+<span id="cb5-171"><a href="#cb5-171" tabindex="-1"></a><span class="sc">&gt;</span> RACGAP1  <span class="fl">0.1384965</span></span>
+<span id="cb5-172"><a href="#cb5-172" tabindex="-1"></a><span class="sc">&gt;</span> APOE     <span class="fl">0.1384965</span></span>
+<span id="cb5-173"><a href="#cb5-173" tabindex="-1"></a><span class="sc">&gt;</span> CDK4     <span class="fl">0.1384965</span></span>
+<span id="cb5-174"><a href="#cb5-174" tabindex="-1"></a><span class="sc">&gt;</span> ITGB1    <span class="fl">0.4413048</span></span>
+<span id="cb5-175"><a href="#cb5-175" tabindex="-1"></a><span class="sc">&gt;</span> CDT1     <span class="fl">0.1384965</span></span>
+<span id="cb5-176"><a href="#cb5-176" tabindex="-1"></a><span class="sc">&gt;</span> KDR      <span class="fl">0.1384965</span></span>
+<span id="cb5-177"><a href="#cb5-177" tabindex="-1"></a><span class="sc">&gt;</span> KIF4A    <span class="fl">0.1384965</span></span>
+<span id="cb5-178"><a href="#cb5-178" tabindex="-1"></a><span class="sc">&gt;</span> PTTG1    <span class="fl">0.1384965</span></span>
+<span id="cb5-179"><a href="#cb5-179" tabindex="-1"></a><span class="sc">&gt;</span> MELK     <span class="fl">0.1384965</span></span>
+<span id="cb5-180"><a href="#cb5-180" tabindex="-1"></a><span class="sc">&gt;</span> MCM3     <span class="fl">0.1384965</span></span>
+<span id="cb5-181"><a href="#cb5-181" tabindex="-1"></a><span class="sc">&gt;</span> GATA3    <span class="fl">0.1384965</span></span>
+<span id="cb5-182"><a href="#cb5-182" tabindex="-1"></a><span class="sc">&gt;</span> THBS1    <span class="fl">0.1384965</span></span>
+<span id="cb5-183"><a href="#cb5-183" tabindex="-1"></a><span class="sc">&gt;</span> TPX2     <span class="fl">0.1384965</span></span>
+<span id="cb5-184"><a href="#cb5-184" tabindex="-1"></a><span class="sc">&gt;</span> CXCL10   <span class="fl">0.1384965</span></span>
+<span id="cb5-185"><a href="#cb5-185" tabindex="-1"></a><span class="sc">&gt;</span> LEP      <span class="fl">0.1384965</span></span>
+<span id="cb5-186"><a href="#cb5-186" tabindex="-1"></a><span class="sc">&gt;</span> CD36     <span class="fl">0.1384965</span></span>
+<span id="cb5-187"><a href="#cb5-187" tabindex="-1"></a><span class="sc">&gt;</span> CEBPA    <span class="fl">0.4413048</span></span>
+<span id="cb5-188"><a href="#cb5-188" tabindex="-1"></a><span class="sc">&gt;</span> MCM6     <span class="fl">0.1384965</span></span>
+<span id="cb5-189"><a href="#cb5-189" tabindex="-1"></a><span class="sc">&gt;</span> TK1      <span class="fl">0.1384965</span></span>
+<span id="cb5-190"><a href="#cb5-190" tabindex="-1"></a><span class="sc">&gt;</span> CDCA5    <span class="fl">0.1384965</span></span>
+<span id="cb5-191"><a href="#cb5-191" tabindex="-1"></a><span class="sc">&gt;</span> SMC4     <span class="fl">0.1384965</span></span>
+<span id="cb5-192"><a href="#cb5-192" tabindex="-1"></a><span class="sc">&gt;</span> MCM5     <span class="fl">0.1384965</span></span>
+<span id="cb5-193"><a href="#cb5-193" tabindex="-1"></a><span class="sc">&gt;</span> FBXO5    <span class="fl">0.1384965</span></span>
+<span id="cb5-194"><a href="#cb5-194" tabindex="-1"></a><span class="sc">&gt;</span> TRIP13   <span class="fl">0.1384965</span></span>
+<span id="cb5-195"><a href="#cb5-195" tabindex="-1"></a><span class="sc">&gt;</span> VCAM1    <span class="fl">0.1384965</span></span>
+<span id="cb5-196"><a href="#cb5-196" tabindex="-1"></a><span class="sc">&gt;</span> SPAG5    <span class="fl">0.1384965</span></span>
+<span id="cb5-197"><a href="#cb5-197" tabindex="-1"></a><span class="sc">&gt;</span> PCNA     <span class="fl">0.1384965</span></span>
+<span id="cb5-198"><a href="#cb5-198" tabindex="-1"></a><span class="sc">&gt;</span> NCAPH    <span class="fl">0.1384965</span></span>
+<span id="cb5-199"><a href="#cb5-199" tabindex="-1"></a><span class="sc">&gt;</span> CEP55    <span class="fl">0.1384965</span></span>
+<span id="cb5-200"><a href="#cb5-200" tabindex="-1"></a><span class="sc">&gt;</span> NCAPG    <span class="fl">0.1384965</span></span>
+<span id="cb5-201"><a href="#cb5-201" tabindex="-1"></a><span class="sc">&gt;</span> MYBL2    <span class="fl">0.1384965</span></span>
+<span id="cb5-202"><a href="#cb5-202" tabindex="-1"></a><span class="sc">&gt;</span> RRM1     <span class="fl">0.1384965</span></span>
+<span id="cb5-203"><a href="#cb5-203" tabindex="-1"></a><span class="sc">&gt;</span> HJURP    <span class="fl">0.1384965</span></span>
+<span id="cb5-204"><a href="#cb5-204" tabindex="-1"></a><span class="sc">&gt;</span> IL7R     <span class="fl">0.1384965</span></span>
+<span id="cb5-205"><a href="#cb5-205" tabindex="-1"></a><span class="sc">&gt;</span> SERPINE1 <span class="fl">0.1384965</span></span>
+<span id="cb5-206"><a href="#cb5-206" tabindex="-1"></a><span class="sc">&gt;</span> UHRF1    <span class="fl">0.1384965</span></span>
+<span id="cb5-207"><a href="#cb5-207" tabindex="-1"></a><span class="sc">&gt;</span> KPNA2    <span class="fl">0.1384965</span></span>
+<span id="cb5-208"><a href="#cb5-208" tabindex="-1"></a><span class="sc">&gt;</span> CDCA3    <span class="fl">0.1384965</span></span>
+<span id="cb5-209"><a href="#cb5-209" tabindex="-1"></a><span class="sc">&gt;</span> DTL      <span class="fl">0.1384965</span></span>
+<span id="cb5-210"><a href="#cb5-210" tabindex="-1"></a><span class="sc">&gt;</span> RAD51AP1 <span class="fl">0.1384965</span></span>
+<span id="cb5-211"><a href="#cb5-211" tabindex="-1"></a><span class="sc">&gt;</span> KIFC1    <span class="fl">0.1384965</span></span>
+<span id="cb5-212"><a href="#cb5-212" tabindex="-1"></a><span class="fu">head</span>(top_de, <span class="dv">100</span>)</span>
+<span id="cb5-213"><a href="#cb5-213" tabindex="-1"></a><span class="sc">&gt;</span>              gene obs_de_neighbors null_mean   null_sd z_empirical       pval</span>
+<span id="cb5-214"><a href="#cb5-214" tabindex="-1"></a><span class="sc">&gt;</span> GAPDH       GAPDH              <span class="dv">456</span>    <span class="fl">416.91</span> <span class="fl">15.396507</span>    <span class="fl">2.538888</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-215"><a href="#cb5-215" tabindex="-1"></a><span class="sc">&gt;</span> SP1           SP1              <span class="dv">384</span>    <span class="fl">317.30</span> <span class="fl">13.185928</span>    <span class="fl">5.058423</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-216"><a href="#cb5-216" tabindex="-1"></a><span class="sc">&gt;</span> FN1           FN1              <span class="dv">298</span>    <span class="fl">220.50</span> <span class="fl">10.424815</span>    <span class="fl">7.434185</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-217"><a href="#cb5-217" tabindex="-1"></a><span class="sc">&gt;</span> CD4           CD4              <span class="dv">289</span>    <span class="fl">199.80</span>  <span class="fl">9.718253</span>    <span class="fl">9.178604</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-218"><a href="#cb5-218" tabindex="-1"></a><span class="sc">&gt;</span> HIF1A       HIF1A              <span class="dv">277</span>    <span class="fl">248.16</span> <span class="fl">10.944045</span>    <span class="fl">2.635223</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-219"><a href="#cb5-219" tabindex="-1"></a><span class="sc">&gt;</span> TGFB1       TGFB1              <span class="dv">239</span>    <span class="fl">181.17</span>  <span class="fl">9.452759</span>    <span class="fl">6.117791</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-220"><a href="#cb5-220" tabindex="-1"></a><span class="sc">&gt;</span> FOS           FOS              <span class="dv">238</span>    <span class="fl">192.84</span> <span class="fl">10.508986</span>    <span class="fl">4.297275</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-221"><a href="#cb5-221" tabindex="-1"></a><span class="sc">&gt;</span> MMP9         MMP9              <span class="dv">232</span>    <span class="fl">168.29</span>  <span class="fl">8.299075</span>    <span class="fl">7.676759</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-222"><a href="#cb5-222" tabindex="-1"></a><span class="sc">&gt;</span> CCNB1       CCNB1              <span class="dv">222</span>    <span class="fl">158.48</span> <span class="fl">10.798878</span>    <span class="fl">5.882093</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-223"><a href="#cb5-223" tabindex="-1"></a><span class="sc">&gt;</span> EGF           EGF              <span class="dv">222</span>    <span class="fl">181.60</span> <span class="fl">10.060424</span>    <span class="fl">4.015736</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-224"><a href="#cb5-224" tabindex="-1"></a><span class="sc">&gt;</span> CDC20       CDC20              <span class="dv">218</span>    <span class="fl">140.00</span>  <span class="fl">8.436333</span>    <span class="fl">9.245723</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-225"><a href="#cb5-225" tabindex="-1"></a><span class="sc">&gt;</span> CREB1       CREB1              <span class="dv">217</span>    <span class="fl">185.33</span>  <span class="fl">9.909749</span>    <span class="fl">3.195843</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-226"><a href="#cb5-226" tabindex="-1"></a><span class="sc">&gt;</span> CCND1       CCND1              <span class="dv">213</span>    <span class="fl">192.77</span> <span class="fl">10.741080</span>    <span class="fl">1.883423</span> <span class="fl">0.03960396</span></span>
+<span id="cb5-227"><a href="#cb5-227" tabindex="-1"></a><span class="sc">&gt;</span> TOP2A       TOP2A              <span class="dv">212</span>    <span class="fl">141.00</span>  <span class="fl">9.409859</span>    <span class="fl">7.545277</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-228"><a href="#cb5-228" tabindex="-1"></a><span class="sc">&gt;</span> AURKA       AURKA              <span class="dv">211</span>    <span class="fl">132.08</span>  <span class="fl">8.625403</span>    <span class="fl">9.149717</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-229"><a href="#cb5-229" tabindex="-1"></a><span class="sc">&gt;</span> PLK1         PLK1              <span class="dv">208</span>    <span class="fl">155.76</span>  <span class="fl">8.818163</span>    <span class="fl">5.924136</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-230"><a href="#cb5-230" tabindex="-1"></a><span class="sc">&gt;</span> CDCA8       CDCA8              <span class="dv">200</span>    <span class="fl">131.32</span>  <span class="fl">8.222757</span>    <span class="fl">8.352429</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-231"><a href="#cb5-231" tabindex="-1"></a><span class="sc">&gt;</span> AURKB       AURKB              <span class="dv">198</span>    <span class="fl">129.57</span>  <span class="fl">8.673954</span>    <span class="fl">7.889136</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-232"><a href="#cb5-232" tabindex="-1"></a><span class="sc">&gt;</span> BIRC5       BIRC5              <span class="dv">195</span>    <span class="fl">113.82</span>  <span class="fl">7.873212</span>   <span class="fl">10.310912</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-233"><a href="#cb5-233" tabindex="-1"></a><span class="sc">&gt;</span> TLR4         TLR4              <span class="dv">194</span>    <span class="fl">149.68</span>  <span class="fl">8.146239</span>    <span class="fl">5.440547</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-234"><a href="#cb5-234" tabindex="-1"></a><span class="sc">&gt;</span> BUB1B       BUB1B              <span class="dv">192</span>    <span class="fl">115.07</span>  <span class="fl">8.306326</span>    <span class="fl">9.261616</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-235"><a href="#cb5-235" tabindex="-1"></a><span class="sc">&gt;</span> KIF11       KIF11              <span class="dv">190</span>    <span class="fl">104.71</span>  <span class="fl">7.878234</span>   <span class="fl">10.826031</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-236"><a href="#cb5-236" tabindex="-1"></a><span class="sc">&gt;</span> CEBPB       CEBPB              <span class="dv">190</span>    <span class="fl">164.22</span>  <span class="fl">9.296008</span>    <span class="fl">2.773234</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-237"><a href="#cb5-237" tabindex="-1"></a><span class="sc">&gt;</span> FOXM1       FOXM1              <span class="dv">187</span>    <span class="fl">107.98</span>  <span class="fl">7.714580</span>   <span class="fl">10.242942</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-238"><a href="#cb5-238" tabindex="-1"></a><span class="sc">&gt;</span> KIF23       KIF23              <span class="dv">185</span>    <span class="fl">105.66</span>  <span class="fl">8.033038</span>    <span class="fl">9.876712</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-239"><a href="#cb5-239" tabindex="-1"></a><span class="sc">&gt;</span> CALM3       CALM3              <span class="dv">185</span>    <span class="fl">158.64</span>  <span class="fl">9.838617</span>    <span class="fl">2.679238</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-240"><a href="#cb5-240" tabindex="-1"></a><span class="sc">&gt;</span> CCNB2       CCNB2              <span class="dv">184</span>    <span class="fl">105.28</span>  <span class="fl">8.026572</span>    <span class="fl">9.807425</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-241"><a href="#cb5-241" tabindex="-1"></a><span class="sc">&gt;</span> CDC6         CDC6              <span class="dv">184</span>    <span class="fl">112.23</span>  <span class="fl">8.653667</span>    <span class="fl">8.293594</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-242"><a href="#cb5-242" tabindex="-1"></a><span class="sc">&gt;</span> ERBB2       ERBB2              <span class="dv">184</span>    <span class="fl">160.64</span>  <span class="fl">9.474602</span>    <span class="fl">2.465539</span> <span class="fl">0.03960396</span></span>
+<span id="cb5-243"><a href="#cb5-243" tabindex="-1"></a><span class="sc">&gt;</span> BUB1         BUB1              <span class="dv">180</span>     <span class="fl">97.86</span>  <span class="fl">7.388252</span>   <span class="fl">11.117651</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-244"><a href="#cb5-244" tabindex="-1"></a><span class="sc">&gt;</span> EXO1         EXO1              <span class="dv">179</span>    <span class="fl">111.51</span>  <span class="fl">8.843756</span>    <span class="fl">7.631373</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-245"><a href="#cb5-245" tabindex="-1"></a><span class="sc">&gt;</span> PXDN         PXDN              <span class="dv">179</span>    <span class="fl">144.25</span>  <span class="fl">8.976259</span>    <span class="fl">3.871323</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-246"><a href="#cb5-246" tabindex="-1"></a><span class="sc">&gt;</span> MAD2L1     MAD2L1              <span class="dv">178</span>    <span class="fl">114.91</span>  <span class="fl">8.894551</span>    <span class="fl">7.093107</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-247"><a href="#cb5-247" tabindex="-1"></a><span class="sc">&gt;</span> CALML5     CALML5              <span class="dv">177</span>    <span class="fl">145.24</span>  <span class="fl">9.922040</span>    <span class="fl">3.200955</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-248"><a href="#cb5-248" tabindex="-1"></a><span class="sc">&gt;</span> CDK2         CDK2              <span class="dv">177</span>    <span class="fl">154.62</span>  <span class="fl">9.605112</span>    <span class="fl">2.330009</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-249"><a href="#cb5-249" tabindex="-1"></a><span class="sc">&gt;</span> PECAM1     PECAM1              <span class="dv">170</span>    <span class="fl">120.74</span>  <span class="fl">7.144426</span>    <span class="fl">6.894885</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-250"><a href="#cb5-250" tabindex="-1"></a><span class="sc">&gt;</span> KIF2C       KIF2C              <span class="dv">168</span>     <span class="fl">85.07</span>  <span class="fl">6.284911</span>   <span class="fl">13.195096</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-251"><a href="#cb5-251" tabindex="-1"></a><span class="sc">&gt;</span> KIF20A     KIF20A              <span class="dv">168</span>     <span class="fl">86.08</span>  <span class="fl">6.445858</span>   <span class="fl">12.708936</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-252"><a href="#cb5-252" tabindex="-1"></a><span class="sc">&gt;</span> ANLN         ANLN              <span class="dv">168</span>     <span class="fl">95.44</span>  <span class="fl">7.906422</span>    <span class="fl">9.177349</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-253"><a href="#cb5-253" tabindex="-1"></a><span class="sc">&gt;</span> ITGAM       ITGAM              <span class="dv">168</span>    <span class="fl">115.86</span>  <span class="fl">8.686481</span>    <span class="fl">6.002431</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-254"><a href="#cb5-254" tabindex="-1"></a><span class="sc">&gt;</span> CD34         CD34              <span class="dv">166</span>    <span class="fl">115.39</span>  <span class="fl">7.462898</span>    <span class="fl">6.781548</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-255"><a href="#cb5-255" tabindex="-1"></a><span class="sc">&gt;</span> ICAM1       ICAM1              <span class="dv">166</span>    <span class="fl">124.15</span>  <span class="fl">8.037004</span>    <span class="fl">5.207164</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-256"><a href="#cb5-256" tabindex="-1"></a><span class="sc">&gt;</span> E2F1         E2F1              <span class="dv">165</span>    <span class="fl">147.13</span>  <span class="fl">9.480075</span>    <span class="fl">1.885006</span> <span class="fl">0.04950495</span></span>
+<span id="cb5-257"><a href="#cb5-257" tabindex="-1"></a><span class="sc">&gt;</span> RRM2         RRM2              <span class="dv">162</span>     <span class="fl">90.29</span>  <span class="fl">7.785372</span>    <span class="fl">9.210863</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-258"><a href="#cb5-258" tabindex="-1"></a><span class="sc">&gt;</span> UBE2C       UBE2C              <span class="dv">162</span>    <span class="fl">104.13</span>  <span class="fl">7.975537</span>    <span class="fl">7.255938</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-259"><a href="#cb5-259" tabindex="-1"></a><span class="sc">&gt;</span> NUF2         NUF2              <span class="dv">160</span>     <span class="fl">75.44</span>  <span class="fl">6.478122</span>   <span class="fl">13.053166</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-260"><a href="#cb5-260" tabindex="-1"></a><span class="sc">&gt;</span> MKI67       MKI67              <span class="dv">160</span>     <span class="fl">74.61</span>  <span class="fl">7.020741</span>   <span class="fl">12.162533</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-261"><a href="#cb5-261" tabindex="-1"></a><span class="sc">&gt;</span> ESPL1       ESPL1              <span class="dv">160</span>     <span class="fl">92.61</span>  <span class="fl">7.265381</span>    <span class="fl">9.275495</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-262"><a href="#cb5-262" tabindex="-1"></a><span class="sc">&gt;</span> FEN1         FEN1              <span class="dv">160</span>    <span class="fl">105.50</span>  <span class="fl">7.944886</span>    <span class="fl">6.859759</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-263"><a href="#cb5-263" tabindex="-1"></a><span class="sc">&gt;</span> EGR1         EGR1              <span class="dv">159</span>    <span class="fl">137.78</span>  <span class="fl">8.778509</span>    <span class="fl">2.417267</span> <span class="fl">0.01980198</span></span>
+<span id="cb5-264"><a href="#cb5-264" tabindex="-1"></a><span class="sc">&gt;</span> TTK           TTK              <span class="dv">157</span>     <span class="fl">72.09</span>  <span class="fl">6.993641</span>   <span class="fl">12.141030</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-265"><a href="#cb5-265" tabindex="-1"></a><span class="sc">&gt;</span> MMP2         MMP2              <span class="dv">157</span>    <span class="fl">113.89</span>  <span class="fl">7.771867</span>    <span class="fl">5.546930</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-266"><a href="#cb5-266" tabindex="-1"></a><span class="sc">&gt;</span> FOXO1       FOXO1              <span class="dv">157</span>    <span class="fl">139.48</span>  <span class="fl">7.709996</span>    <span class="fl">2.272375</span> <span class="fl">0.02970297</span></span>
+<span id="cb5-267"><a href="#cb5-267" tabindex="-1"></a><span class="sc">&gt;</span> NDC80       NDC80              <span class="dv">154</span>     <span class="fl">74.40</span>  <span class="fl">6.466698</span>   <span class="fl">12.309219</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-268"><a href="#cb5-268" tabindex="-1"></a><span class="sc">&gt;</span> MCM10       MCM10              <span class="dv">154</span>     <span class="fl">75.48</span>  <span class="fl">7.178081</span>   <span class="fl">10.938857</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-269"><a href="#cb5-269" tabindex="-1"></a><span class="sc">&gt;</span> DLGAP5     DLGAP5              <span class="dv">153</span>     <span class="fl">66.39</span>  <span class="fl">6.256948</span>   <span class="fl">13.842213</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-270"><a href="#cb5-270" tabindex="-1"></a><span class="sc">&gt;</span> COL1A1     COL1A1              <span class="dv">153</span>    <span class="fl">107.73</span>  <span class="fl">7.603634</span>    <span class="fl">5.953732</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-271"><a href="#cb5-271" tabindex="-1"></a><span class="sc">&gt;</span> NEK2         NEK2              <span class="dv">152</span>     <span class="fl">79.18</span>  <span class="fl">6.440685</span>   <span class="fl">11.306251</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-272"><a href="#cb5-272" tabindex="-1"></a><span class="sc">&gt;</span> SOX9         SOX9              <span class="dv">151</span>    <span class="fl">101.47</span>  <span class="fl">7.521625</span>    <span class="fl">6.585013</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-273"><a href="#cb5-273" tabindex="-1"></a><span class="sc">&gt;</span> RACGAP1   RACGAP1              <span class="dv">149</span>     <span class="fl">80.63</span>  <span class="fl">6.817469</span>   <span class="fl">10.028649</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-274"><a href="#cb5-274" tabindex="-1"></a><span class="sc">&gt;</span> APOE         APOE              <span class="dv">149</span>    <span class="fl">117.03</span>  <span class="fl">7.407961</span>    <span class="fl">4.315628</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-275"><a href="#cb5-275" tabindex="-1"></a><span class="sc">&gt;</span> CDK4         CDK4              <span class="dv">149</span>    <span class="fl">128.35</span>  <span class="fl">9.197469</span>    <span class="fl">2.245183</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-276"><a href="#cb5-276" tabindex="-1"></a><span class="sc">&gt;</span> ITGB1       ITGB1              <span class="dv">149</span>    <span class="fl">133.57</span>  <span class="fl">9.225848</span>    <span class="fl">1.672475</span> <span class="fl">0.04950495</span></span>
+<span id="cb5-277"><a href="#cb5-277" tabindex="-1"></a><span class="sc">&gt;</span> CDT1         CDT1              <span class="dv">148</span>     <span class="fl">87.13</span>  <span class="fl">6.995893</span>    <span class="fl">8.700819</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-278"><a href="#cb5-278" tabindex="-1"></a><span class="sc">&gt;</span> KDR           KDR              <span class="dv">148</span>    <span class="fl">117.32</span>  <span class="fl">7.532931</span>    <span class="fl">4.072784</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-279"><a href="#cb5-279" tabindex="-1"></a><span class="sc">&gt;</span> KIF4A       KIF4A              <span class="dv">147</span>     <span class="fl">72.86</span>  <span class="fl">6.010126</span>   <span class="fl">12.335848</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-280"><a href="#cb5-280" tabindex="-1"></a><span class="sc">&gt;</span> PTTG1       PTTG1              <span class="dv">146</span>     <span class="fl">74.42</span>  <span class="fl">6.592282</span>   <span class="fl">10.858152</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-281"><a href="#cb5-281" tabindex="-1"></a><span class="sc">&gt;</span> MELK         MELK              <span class="dv">145</span>     <span class="fl">59.81</span>  <span class="fl">6.227497</span>   <span class="fl">13.679654</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-282"><a href="#cb5-282" tabindex="-1"></a><span class="sc">&gt;</span> MCM3         MCM3              <span class="dv">145</span>     <span class="fl">85.89</span>  <span class="fl">7.870024</span>    <span class="fl">7.510778</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-283"><a href="#cb5-283" tabindex="-1"></a><span class="sc">&gt;</span> GATA3       GATA3              <span class="dv">145</span>    <span class="fl">107.83</span>  <span class="fl">7.908639</span>    <span class="fl">4.699924</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-284"><a href="#cb5-284" tabindex="-1"></a><span class="sc">&gt;</span> THBS1       THBS1              <span class="dv">144</span>    <span class="fl">108.00</span>  <span class="fl">6.894589</span>    <span class="fl">5.221486</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-285"><a href="#cb5-285" tabindex="-1"></a><span class="sc">&gt;</span> TPX2         TPX2              <span class="dv">143</span>     <span class="fl">65.87</span>  <span class="fl">5.679406</span>   <span class="fl">13.580645</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-286"><a href="#cb5-286" tabindex="-1"></a><span class="sc">&gt;</span> CXCL10     CXCL10              <span class="dv">143</span>     <span class="fl">89.27</span>  <span class="fl">6.642160</span>    <span class="fl">8.089237</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-287"><a href="#cb5-287" tabindex="-1"></a><span class="sc">&gt;</span> LEP           LEP              <span class="dv">143</span>    <span class="fl">103.46</span>  <span class="fl">7.479831</span>    <span class="fl">5.286215</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-288"><a href="#cb5-288" tabindex="-1"></a><span class="sc">&gt;</span> CD36         CD36              <span class="dv">143</span>    <span class="fl">119.48</span>  <span class="fl">8.432118</span>    <span class="fl">2.789335</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-289"><a href="#cb5-289" tabindex="-1"></a><span class="sc">&gt;</span> CEBPA       CEBPA              <span class="dv">143</span>    <span class="fl">126.36</span>  <span class="fl">8.814038</span>    <span class="fl">1.887897</span> <span class="fl">0.04950495</span></span>
+<span id="cb5-290"><a href="#cb5-290" tabindex="-1"></a><span class="sc">&gt;</span> MCM6         MCM6              <span class="dv">142</span>     <span class="fl">81.95</span>  <span class="fl">7.861651</span>    <span class="fl">7.638345</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-291"><a href="#cb5-291" tabindex="-1"></a><span class="sc">&gt;</span> TK1           TK1              <span class="dv">141</span>     <span class="fl">74.24</span>  <span class="fl">6.276652</span>   <span class="fl">10.636243</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-292"><a href="#cb5-292" tabindex="-1"></a><span class="sc">&gt;</span> CDCA5       CDCA5              <span class="dv">140</span>     <span class="fl">59.08</span>  <span class="fl">5.804352</span>   <span class="fl">13.941263</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-293"><a href="#cb5-293" tabindex="-1"></a><span class="sc">&gt;</span> SMC4         SMC4              <span class="dv">140</span>     <span class="fl">76.26</span>  <span class="fl">6.857305</span>    <span class="fl">9.295197</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-294"><a href="#cb5-294" tabindex="-1"></a><span class="sc">&gt;</span> MCM5         MCM5              <span class="dv">140</span>     <span class="fl">86.16</span>  <span class="fl">7.901822</span>    <span class="fl">6.813619</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-295"><a href="#cb5-295" tabindex="-1"></a><span class="sc">&gt;</span> FBXO5       FBXO5              <span class="dv">140</span>     <span class="fl">97.91</span>  <span class="fl">7.086899</span>    <span class="fl">5.939128</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-296"><a href="#cb5-296" tabindex="-1"></a><span class="sc">&gt;</span> TRIP13     TRIP13              <span class="dv">139</span>     <span class="fl">66.94</span>  <span class="fl">6.608565</span>   <span class="fl">10.904031</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-297"><a href="#cb5-297" tabindex="-1"></a><span class="sc">&gt;</span> VCAM1       VCAM1              <span class="dv">139</span>     <span class="fl">95.55</span>  <span class="fl">7.451357</span>    <span class="fl">5.831152</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-298"><a href="#cb5-298" tabindex="-1"></a><span class="sc">&gt;</span> SPAG5       SPAG5              <span class="dv">138</span>     <span class="fl">62.34</span>  <span class="fl">6.018859</span>   <span class="fl">12.570488</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-299"><a href="#cb5-299" tabindex="-1"></a><span class="sc">&gt;</span> PCNA         PCNA              <span class="dv">137</span>    <span class="fl">109.11</span>  <span class="fl">7.928844</span>    <span class="fl">3.517537</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-300"><a href="#cb5-300" tabindex="-1"></a><span class="sc">&gt;</span> NCAPH       NCAPH              <span class="dv">136</span>     <span class="fl">61.31</span>  <span class="fl">6.235602</span>   <span class="fl">11.977994</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-301"><a href="#cb5-301" tabindex="-1"></a><span class="sc">&gt;</span> CEP55       CEP55              <span class="dv">135</span>     <span class="fl">62.07</span>  <span class="fl">5.983572</span>   <span class="fl">12.188372</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-302"><a href="#cb5-302" tabindex="-1"></a><span class="sc">&gt;</span> NCAPG       NCAPG              <span class="dv">135</span>     <span class="fl">62.59</span>  <span class="fl">6.770547</span>   <span class="fl">10.694853</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-303"><a href="#cb5-303" tabindex="-1"></a><span class="sc">&gt;</span> MYBL2       MYBL2              <span class="dv">135</span>     <span class="fl">82.12</span>  <span class="fl">7.973795</span>    <span class="fl">6.631723</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-304"><a href="#cb5-304" tabindex="-1"></a><span class="sc">&gt;</span> RRM1         RRM1              <span class="dv">135</span>     <span class="fl">93.34</span>  <span class="fl">7.650470</span>    <span class="fl">5.445417</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-305"><a href="#cb5-305" tabindex="-1"></a><span class="sc">&gt;</span> HJURP       HJURP              <span class="dv">134</span>     <span class="fl">58.74</span>  <span class="fl">5.575234</span>   <span class="fl">13.498985</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-306"><a href="#cb5-306" tabindex="-1"></a><span class="sc">&gt;</span> IL7R         IL7R              <span class="dv">134</span>     <span class="fl">81.52</span>  <span class="fl">6.456506</span>    <span class="fl">8.128236</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-307"><a href="#cb5-307" tabindex="-1"></a><span class="sc">&gt;</span> SERPINE1 SERPINE1              <span class="dv">134</span>     <span class="fl">92.12</span>  <span class="fl">6.490521</span>    <span class="fl">6.452486</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-308"><a href="#cb5-308" tabindex="-1"></a><span class="sc">&gt;</span> UHRF1       UHRF1              <span class="dv">133</span>     <span class="fl">65.92</span>  <span class="fl">6.373366</span>   <span class="fl">10.525050</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-309"><a href="#cb5-309" tabindex="-1"></a><span class="sc">&gt;</span> KPNA2       KPNA2              <span class="dv">131</span>     <span class="fl">84.89</span>  <span class="fl">6.786640</span>    <span class="fl">6.794231</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-310"><a href="#cb5-310" tabindex="-1"></a><span class="sc">&gt;</span> CDCA3       CDCA3              <span class="dv">129</span>     <span class="fl">54.44</span>  <span class="fl">5.492548</span>   <span class="fl">13.574757</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-311"><a href="#cb5-311" tabindex="-1"></a><span class="sc">&gt;</span> DTL           DTL              <span class="dv">129</span>     <span class="fl">78.15</span>  <span class="fl">6.846624</span>    <span class="fl">7.427018</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-312"><a href="#cb5-312" tabindex="-1"></a><span class="sc">&gt;</span> RAD51AP1 RAD51AP1              <span class="dv">128</span>     <span class="fl">61.18</span>  <span class="fl">6.171587</span>   <span class="fl">10.827037</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-313"><a href="#cb5-313" tabindex="-1"></a><span class="sc">&gt;</span> KIFC1       KIFC1              <span class="dv">128</span>     <span class="fl">64.80</span>  <span class="fl">6.159496</span>   <span class="fl">10.260579</span> <span class="fl">0.00990099</span></span>
+<span id="cb5-314"><a href="#cb5-314" tabindex="-1"></a><span class="sc">&gt;</span>               padj</span>
+<span id="cb5-315"><a href="#cb5-315" tabindex="-1"></a><span class="sc">&gt;</span> GAPDH    <span class="fl">0.2217696</span></span>
+<span id="cb5-316"><a href="#cb5-316" tabindex="-1"></a><span class="sc">&gt;</span> SP1      <span class="fl">0.1384965</span></span>
+<span id="cb5-317"><a href="#cb5-317" tabindex="-1"></a><span class="sc">&gt;</span> FN1      <span class="fl">0.1384965</span></span>
+<span id="cb5-318"><a href="#cb5-318" tabindex="-1"></a><span class="sc">&gt;</span> CD4      <span class="fl">0.1384965</span></span>
+<span id="cb5-319"><a href="#cb5-319" tabindex="-1"></a><span class="sc">&gt;</span> HIF1A    <span class="fl">0.1384965</span></span>
+<span id="cb5-320"><a href="#cb5-320" tabindex="-1"></a><span class="sc">&gt;</span> TGFB1    <span class="fl">0.1384965</span></span>
+<span id="cb5-321"><a href="#cb5-321" tabindex="-1"></a><span class="sc">&gt;</span> FOS      <span class="fl">0.1384965</span></span>
+<span id="cb5-322"><a href="#cb5-322" tabindex="-1"></a><span class="sc">&gt;</span> MMP9     <span class="fl">0.1384965</span></span>
+<span id="cb5-323"><a href="#cb5-323" tabindex="-1"></a><span class="sc">&gt;</span> CCNB1    <span class="fl">0.1384965</span></span>
+<span id="cb5-324"><a href="#cb5-324" tabindex="-1"></a><span class="sc">&gt;</span> EGF      <span class="fl">0.1384965</span></span>
+<span id="cb5-325"><a href="#cb5-325" tabindex="-1"></a><span class="sc">&gt;</span> CDC20    <span class="fl">0.1384965</span></span>
+<span id="cb5-326"><a href="#cb5-326" tabindex="-1"></a><span class="sc">&gt;</span> CREB1    <span class="fl">0.1384965</span></span>
+<span id="cb5-327"><a href="#cb5-327" tabindex="-1"></a><span class="sc">&gt;</span> CCND1    <span class="fl">0.3793191</span></span>
+<span id="cb5-328"><a href="#cb5-328" tabindex="-1"></a><span class="sc">&gt;</span> TOP2A    <span class="fl">0.1384965</span></span>
+<span id="cb5-329"><a href="#cb5-329" tabindex="-1"></a><span class="sc">&gt;</span> AURKA    <span class="fl">0.1384965</span></span>
+<span id="cb5-330"><a href="#cb5-330" tabindex="-1"></a><span class="sc">&gt;</span> PLK1     <span class="fl">0.1384965</span></span>
+<span id="cb5-331"><a href="#cb5-331" tabindex="-1"></a><span class="sc">&gt;</span> CDCA8    <span class="fl">0.1384965</span></span>
+<span id="cb5-332"><a href="#cb5-332" tabindex="-1"></a><span class="sc">&gt;</span> AURKB    <span class="fl">0.1384965</span></span>
+<span id="cb5-333"><a href="#cb5-333" tabindex="-1"></a><span class="sc">&gt;</span> BIRC5    <span class="fl">0.1384965</span></span>
+<span id="cb5-334"><a href="#cb5-334" tabindex="-1"></a><span class="sc">&gt;</span> TLR4     <span class="fl">0.1384965</span></span>
+<span id="cb5-335"><a href="#cb5-335" tabindex="-1"></a><span class="sc">&gt;</span> BUB1B    <span class="fl">0.1384965</span></span>
+<span id="cb5-336"><a href="#cb5-336" tabindex="-1"></a><span class="sc">&gt;</span> KIF11    <span class="fl">0.1384965</span></span>
+<span id="cb5-337"><a href="#cb5-337" tabindex="-1"></a><span class="sc">&gt;</span> CEBPB    <span class="fl">0.1384965</span></span>
+<span id="cb5-338"><a href="#cb5-338" tabindex="-1"></a><span class="sc">&gt;</span> FOXM1    <span class="fl">0.1384965</span></span>
+<span id="cb5-339"><a href="#cb5-339" tabindex="-1"></a><span class="sc">&gt;</span> KIF23    <span class="fl">0.1384965</span></span>
+<span id="cb5-340"><a href="#cb5-340" tabindex="-1"></a><span class="sc">&gt;</span> CALM3    <span class="fl">0.2217696</span></span>
+<span id="cb5-341"><a href="#cb5-341" tabindex="-1"></a><span class="sc">&gt;</span> CCNB2    <span class="fl">0.1384965</span></span>
+<span id="cb5-342"><a href="#cb5-342" tabindex="-1"></a><span class="sc">&gt;</span> CDC6     <span class="fl">0.1384965</span></span>
+<span id="cb5-343"><a href="#cb5-343" tabindex="-1"></a><span class="sc">&gt;</span> ERBB2    <span class="fl">0.3793191</span></span>
+<span id="cb5-344"><a href="#cb5-344" tabindex="-1"></a><span class="sc">&gt;</span> BUB1     <span class="fl">0.1384965</span></span>
+<span id="cb5-345"><a href="#cb5-345" tabindex="-1"></a><span class="sc">&gt;</span> EXO1     <span class="fl">0.1384965</span></span>
+<span id="cb5-346"><a href="#cb5-346" tabindex="-1"></a><span class="sc">&gt;</span> PXDN     <span class="fl">0.1384965</span></span>
+<span id="cb5-347"><a href="#cb5-347" tabindex="-1"></a><span class="sc">&gt;</span> MAD2L1   <span class="fl">0.1384965</span></span>
+<span id="cb5-348"><a href="#cb5-348" tabindex="-1"></a><span class="sc">&gt;</span> CALML5   <span class="fl">0.1384965</span></span>
+<span id="cb5-349"><a href="#cb5-349" tabindex="-1"></a><span class="sc">&gt;</span> CDK2     <span class="fl">0.2217696</span></span>
+<span id="cb5-350"><a href="#cb5-350" tabindex="-1"></a><span class="sc">&gt;</span> PECAM1   <span class="fl">0.1384965</span></span>
+<span id="cb5-351"><a href="#cb5-351" tabindex="-1"></a><span class="sc">&gt;</span> KIF2C    <span class="fl">0.1384965</span></span>
+<span id="cb5-352"><a href="#cb5-352" tabindex="-1"></a><span class="sc">&gt;</span> KIF20A   <span class="fl">0.1384965</span></span>
+<span id="cb5-353"><a href="#cb5-353" tabindex="-1"></a><span class="sc">&gt;</span> ANLN     <span class="fl">0.1384965</span></span>
+<span id="cb5-354"><a href="#cb5-354" tabindex="-1"></a><span class="sc">&gt;</span> ITGAM    <span class="fl">0.1384965</span></span>
+<span id="cb5-355"><a href="#cb5-355" tabindex="-1"></a><span class="sc">&gt;</span> CD34     <span class="fl">0.1384965</span></span>
+<span id="cb5-356"><a href="#cb5-356" tabindex="-1"></a><span class="sc">&gt;</span> ICAM1    <span class="fl">0.1384965</span></span>
+<span id="cb5-357"><a href="#cb5-357" tabindex="-1"></a><span class="sc">&gt;</span> E2F1     <span class="fl">0.4413048</span></span>
+<span id="cb5-358"><a href="#cb5-358" tabindex="-1"></a><span class="sc">&gt;</span> RRM2     <span class="fl">0.1384965</span></span>
+<span id="cb5-359"><a href="#cb5-359" tabindex="-1"></a><span class="sc">&gt;</span> UBE2C    <span class="fl">0.1384965</span></span>
+<span id="cb5-360"><a href="#cb5-360" tabindex="-1"></a><span class="sc">&gt;</span> NUF2     <span class="fl">0.1384965</span></span>
+<span id="cb5-361"><a href="#cb5-361" tabindex="-1"></a><span class="sc">&gt;</span> MKI67    <span class="fl">0.1384965</span></span>
+<span id="cb5-362"><a href="#cb5-362" tabindex="-1"></a><span class="sc">&gt;</span> ESPL1    <span class="fl">0.1384965</span></span>
+<span id="cb5-363"><a href="#cb5-363" tabindex="-1"></a><span class="sc">&gt;</span> FEN1     <span class="fl">0.1384965</span></span>
+<span id="cb5-364"><a href="#cb5-364" tabindex="-1"></a><span class="sc">&gt;</span> EGR1     <span class="fl">0.2217696</span></span>
+<span id="cb5-365"><a href="#cb5-365" tabindex="-1"></a><span class="sc">&gt;</span> TTK      <span class="fl">0.1384965</span></span>
+<span id="cb5-366"><a href="#cb5-366" tabindex="-1"></a><span class="sc">&gt;</span> MMP2     <span class="fl">0.1384965</span></span>
+<span id="cb5-367"><a href="#cb5-367" tabindex="-1"></a><span class="sc">&gt;</span> FOXO1    <span class="fl">0.3042513</span></span>
+<span id="cb5-368"><a href="#cb5-368" tabindex="-1"></a><span class="sc">&gt;</span> NDC80    <span class="fl">0.1384965</span></span>
+<span id="cb5-369"><a href="#cb5-369" tabindex="-1"></a><span class="sc">&gt;</span> MCM10    <span class="fl">0.1384965</span></span>
+<span id="cb5-370"><a href="#cb5-370" tabindex="-1"></a><span class="sc">&gt;</span> DLGAP5   <span class="fl">0.1384965</span></span>
+<span id="cb5-371"><a href="#cb5-371" tabindex="-1"></a><span class="sc">&gt;</span> COL1A1   <span class="fl">0.1384965</span></span>
+<span id="cb5-372"><a href="#cb5-372" tabindex="-1"></a><span class="sc">&gt;</span> NEK2     <span class="fl">0.1384965</span></span>
+<span id="cb5-373"><a href="#cb5-373" tabindex="-1"></a><span class="sc">&gt;</span> SOX9     <span class="fl">0.1384965</span></span>
+<span id="cb5-374"><a href="#cb5-374" tabindex="-1"></a><span class="sc">&gt;</span> RACGAP1  <span class="fl">0.1384965</span></span>
+<span id="cb5-375"><a href="#cb5-375" tabindex="-1"></a><span class="sc">&gt;</span> APOE     <span class="fl">0.1384965</span></span>
+<span id="cb5-376"><a href="#cb5-376" tabindex="-1"></a><span class="sc">&gt;</span> CDK4     <span class="fl">0.1384965</span></span>
+<span id="cb5-377"><a href="#cb5-377" tabindex="-1"></a><span class="sc">&gt;</span> ITGB1    <span class="fl">0.4413048</span></span>
+<span id="cb5-378"><a href="#cb5-378" tabindex="-1"></a><span class="sc">&gt;</span> CDT1     <span class="fl">0.1384965</span></span>
+<span id="cb5-379"><a href="#cb5-379" tabindex="-1"></a><span class="sc">&gt;</span> KDR      <span class="fl">0.1384965</span></span>
+<span id="cb5-380"><a href="#cb5-380" tabindex="-1"></a><span class="sc">&gt;</span> KIF4A    <span class="fl">0.1384965</span></span>
+<span id="cb5-381"><a href="#cb5-381" tabindex="-1"></a><span class="sc">&gt;</span> PTTG1    <span class="fl">0.1384965</span></span>
+<span id="cb5-382"><a href="#cb5-382" tabindex="-1"></a><span class="sc">&gt;</span> MELK     <span class="fl">0.1384965</span></span>
+<span id="cb5-383"><a href="#cb5-383" tabindex="-1"></a><span class="sc">&gt;</span> MCM3     <span class="fl">0.1384965</span></span>
+<span id="cb5-384"><a href="#cb5-384" tabindex="-1"></a><span class="sc">&gt;</span> GATA3    <span class="fl">0.1384965</span></span>
+<span id="cb5-385"><a href="#cb5-385" tabindex="-1"></a><span class="sc">&gt;</span> THBS1    <span class="fl">0.1384965</span></span>
+<span id="cb5-386"><a href="#cb5-386" tabindex="-1"></a><span class="sc">&gt;</span> TPX2     <span class="fl">0.1384965</span></span>
+<span id="cb5-387"><a href="#cb5-387" tabindex="-1"></a><span class="sc">&gt;</span> CXCL10   <span class="fl">0.1384965</span></span>
+<span id="cb5-388"><a href="#cb5-388" tabindex="-1"></a><span class="sc">&gt;</span> LEP      <span class="fl">0.1384965</span></span>
+<span id="cb5-389"><a href="#cb5-389" tabindex="-1"></a><span class="sc">&gt;</span> CD36     <span class="fl">0.1384965</span></span>
+<span id="cb5-390"><a href="#cb5-390" tabindex="-1"></a><span class="sc">&gt;</span> CEBPA    <span class="fl">0.4413048</span></span>
+<span id="cb5-391"><a href="#cb5-391" tabindex="-1"></a><span class="sc">&gt;</span> MCM6     <span class="fl">0.1384965</span></span>
+<span id="cb5-392"><a href="#cb5-392" tabindex="-1"></a><span class="sc">&gt;</span> TK1      <span class="fl">0.1384965</span></span>
+<span id="cb5-393"><a href="#cb5-393" tabindex="-1"></a><span class="sc">&gt;</span> CDCA5    <span class="fl">0.1384965</span></span>
+<span id="cb5-394"><a href="#cb5-394" tabindex="-1"></a><span class="sc">&gt;</span> SMC4     <span class="fl">0.1384965</span></span>
+<span id="cb5-395"><a href="#cb5-395" tabindex="-1"></a><span class="sc">&gt;</span> MCM5     <span class="fl">0.1384965</span></span>
+<span id="cb5-396"><a href="#cb5-396" tabindex="-1"></a><span class="sc">&gt;</span> FBXO5    <span class="fl">0.1384965</span></span>
+<span id="cb5-397"><a href="#cb5-397" tabindex="-1"></a><span class="sc">&gt;</span> TRIP13   <span class="fl">0.1384965</span></span>
+<span id="cb5-398"><a href="#cb5-398" tabindex="-1"></a><span class="sc">&gt;</span> VCAM1    <span class="fl">0.1384965</span></span>
+<span id="cb5-399"><a href="#cb5-399" tabindex="-1"></a><span class="sc">&gt;</span> SPAG5    <span class="fl">0.1384965</span></span>
+<span id="cb5-400"><a href="#cb5-400" tabindex="-1"></a><span class="sc">&gt;</span> PCNA     <span class="fl">0.1384965</span></span>
+<span id="cb5-401"><a href="#cb5-401" tabindex="-1"></a><span class="sc">&gt;</span> NCAPH    <span class="fl">0.1384965</span></span>
+<span id="cb5-402"><a href="#cb5-402" tabindex="-1"></a><span class="sc">&gt;</span> CEP55    <span class="fl">0.1384965</span></span>
+<span id="cb5-403"><a href="#cb5-403" tabindex="-1"></a><span class="sc">&gt;</span> NCAPG    <span class="fl">0.1384965</span></span>
+<span id="cb5-404"><a href="#cb5-404" tabindex="-1"></a><span class="sc">&gt;</span> MYBL2    <span class="fl">0.1384965</span></span>
+<span id="cb5-405"><a href="#cb5-405" tabindex="-1"></a><span class="sc">&gt;</span> RRM1     <span class="fl">0.1384965</span></span>
+<span id="cb5-406"><a href="#cb5-406" tabindex="-1"></a><span class="sc">&gt;</span> HJURP    <span class="fl">0.1384965</span></span>
+<span id="cb5-407"><a href="#cb5-407" tabindex="-1"></a><span class="sc">&gt;</span> IL7R     <span class="fl">0.1384965</span></span>
+<span id="cb5-408"><a href="#cb5-408" tabindex="-1"></a><span class="sc">&gt;</span> SERPINE1 <span class="fl">0.1384965</span></span>
+<span id="cb5-409"><a href="#cb5-409" tabindex="-1"></a><span class="sc">&gt;</span> UHRF1    <span class="fl">0.1384965</span></span>
+<span id="cb5-410"><a href="#cb5-410" tabindex="-1"></a><span class="sc">&gt;</span> KPNA2    <span class="fl">0.1384965</span></span>
+<span id="cb5-411"><a href="#cb5-411" tabindex="-1"></a><span class="sc">&gt;</span> CDCA3    <span class="fl">0.1384965</span></span>
+<span id="cb5-412"><a href="#cb5-412" tabindex="-1"></a><span class="sc">&gt;</span> DTL      <span class="fl">0.1384965</span></span>
+<span id="cb5-413"><a href="#cb5-413" tabindex="-1"></a><span class="sc">&gt;</span> RAD51AP1 <span class="fl">0.1384965</span></span>
+<span id="cb5-414"><a href="#cb5-414" tabindex="-1"></a><span class="sc">&gt;</span> KIFC1    <span class="fl">0.1384965</span></span></code></pre></div>
+</div>
+<div id="module2-enrichment" class="section level3">
+<h3>Module2: Enrichment</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Enrichment is performed on prioritized genes rather than on all expressed genes, which</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># tends to sharpen signal by focusing on network-coherent regions enriched for DE effects.</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>gset <span class="ot">=</span> CrosstalkX<span class="sc">::</span>gset</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co"># Restrict FC vector to prioritized genes before pathway enrichment.</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>fc_named <span class="ot">=</span> de_fc[<span class="fu">names</span>(de_fc) <span class="sc">%in%</span> <span class="fu">row.names</span>(top_de)]</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co"># enrich_path() applies internally either ORA or GSEA enrichment functions from clusterprofiler package.</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co"># it returns enriched pathways with member genes and direction.</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co"># The output is standardized to the columns CrosstalkX expects downstream.</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>enriched_path <span class="ot">=</span> <span class="fu">enrich_path</span>(fc_named, <span class="at">enrich =</span> <span class="st">&quot;ORA&quot;</span>, gset)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>enriched_path <span class="ot">=</span> enriched_path <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">select</span>(ID, geneID, direction)</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co"># TF enrichment uses only regulatory edges (mor != 0) from the network.</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co"># TF activity is inferred from the statistics of downstream targets using functions from decoupleR package.</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>TF <span class="ot">=</span> net <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(mor <span class="sc">!=</span> <span class="dv">0</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>named_tstat <span class="ot">=</span> tstat_named[<span class="fu">names</span>(tstat_named) <span class="sc">%in%</span> <span class="fu">row.names</span>(top_de)]</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>enriched_tf <span class="ot">=</span> <span class="fu">enrich_TF</span>(named_tstat, <span class="at">net =</span> TF)</span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co"># Combine TF and pathway enrichment into a single term table for crosstalk inference.</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co"># This allows TF–pathway and pathway–pathway couplings to be handled uniformly.</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="fu">names</span>(enriched_tf) <span class="ot">=</span> <span class="fu">names</span>(enriched_path)</span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a>enrichment_df <span class="ot">=</span> <span class="fu">rbind</span>(enriched_tf, enriched_path)</span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co"># This example focuses on upregulated programs; adjust this filter if you want &quot;down&quot; or both.</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a>enrichment_df <span class="ot">=</span> enrichment_df <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(direction <span class="sc">==</span> <span class="st">&quot;up&quot;</span>)</span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="fu">row.names</span>(enrichment_df) <span class="ot">=</span> <span class="cn">NULL</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="fu">head</span>(enrichment_df)</span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="sc">&gt;</span> <span class="co"># A tibble: 6 × 3</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="er">&gt;</span>   ID    geneID                                                         direction</span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="sc">&gt;</span>   <span class="er">&lt;</span>chr<span class="sc">&gt;</span> <span class="er">&lt;</span>chr<span class="sc">&gt;</span>                                                          <span class="er">&lt;</span>chr<span class="sc">&gt;</span>    </span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="er">&gt;</span> <span class="dv">1</span> E2F1  PLAU<span class="sc">/</span>E2F1<span class="sc">/</span>SERPINE2<span class="sc">/</span>CDC6<span class="sc">/</span>PCNA<span class="sc">/</span>ACAN<span class="sc">/</span>SIVA1<span class="sc">/</span>BIRC5<span class="sc">/</span>MYBL2<span class="sc">/</span>NRP1<span class="sc">/</span>ASF1… up       </span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="sc">&gt;</span> <span class="dv">2</span> E2F2  CDC6<span class="sc">/</span>PCNA<span class="sc">/</span>BIRC5<span class="sc">/</span>MCM5<span class="sc">/</span>ASF1B<span class="sc">/</span>CDCA4<span class="sc">/</span>CDT1<span class="sc">/</span>E2F1<span class="sc">/</span>FBXO5<span class="sc">/</span>FOXO1<span class="sc">/</span>GMNN<span class="sc">/</span>M… up       </span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="sc">&gt;</span> <span class="dv">3</span> E2F3  E2F1<span class="sc">/</span>CDC6<span class="sc">/</span>BIRC5<span class="sc">/</span>CCNB1<span class="sc">/</span>AURKA<span class="sc">/</span>CDK2<span class="sc">/</span>PLK1<span class="sc">/</span>ASF1B<span class="sc">/</span>CDCA4<span class="sc">/</span>CDT1<span class="sc">/</span>FBXO5<span class="sc">/</span>… up       </span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="sc">&gt;</span> <span class="dv">4</span> E2F4  E2F1<span class="sc">/</span>STMN1<span class="sc">/</span>CCNB2<span class="sc">/</span>PLK1<span class="sc">/</span>CCNB1<span class="sc">/</span>DTL<span class="sc">/</span>FBXO5<span class="sc">/</span>BIRC5<span class="sc">/</span>MYBL2<span class="sc">/</span>CDC6<span class="sc">/</span>NASP<span class="sc">/</span>P… up       </span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="sc">&gt;</span> <span class="dv">5</span> EP300 BIRC5<span class="sc">/</span>CCNB2<span class="sc">/</span>KRT16<span class="sc">/</span>LAMA3<span class="sc">/</span>MMP9<span class="sc">/</span>PCNA<span class="sc">/</span>THBD<span class="sc">/</span>VCAM1                   up       </span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="sc">&gt;</span> <span class="dv">6</span> GLI2  COL10A1<span class="sc">/</span>TGFB1<span class="sc">/</span>FST<span class="sc">/</span>PDGFRA<span class="sc">/</span>BCL6<span class="sc">/</span>BMP1<span class="sc">/</span>BMP7<span class="sc">/</span>CDC7<span class="sc">/</span>CKS1B<span class="sc">/</span>COL5A2<span class="sc">/</span>E2F… up</span></code></pre></div>
+</div>
+<div id="module3-crosstalk-inference" class="section level3">
+<h3>Module3: Crosstalk inference</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># crosstalk() is the single-call pipeline that:</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># prepares term gene sets, preprocesses expression, loads/uses a background network,</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co"># computes MI on gene–gene edges, aggregates MI to term–term scores, and runs permutation tests.</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">crosstalk</span>(enrichment_df, expr, group_names, <span class="at">iter =</span> <span class="dv">100</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">1</span>] <span class="st">&quot;Total Run Time: 20.65 sec&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># filtration:</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co"># low Jaccard overlap reduces trivial links driven by shared genes,</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co"># p-values provide permutation-based evidence of non-random coupling,</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co"># and an MI strength filter helps focus on the stronger half of interactions.</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>sig <span class="ot">=</span> res <span class="sc">|&gt;</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">filter</span>((pval_deg_norm <span class="sc">&lt;=</span> <span class="fl">0.05</span> <span class="sc">|</span> pval_mi_norm <span class="sc">&lt;=</span> <span class="fl">0.05</span>) <span class="sc">&amp;</span> Jaccard <span class="sc">&lt;</span> <span class="fl">0.2</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">filter</span>(mi_norm <span class="sc">&gt;</span> <span class="fu">quantile</span>(mi_norm, <span class="fl">0.5</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co"># A compact string representation of significant couplings for quick inspection.</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="fu">paste0</span>(<span class="fu">gsub</span>(<span class="st">&quot;%.*&quot;</span>, <span class="st">&quot;&quot;</span>, sig<span class="sc">$</span>Term1), <span class="st">&quot; &gt;&gt; &quot;</span>, <span class="fu">gsub</span>(<span class="st">&quot;%.*&quot;</span>, <span class="st">&quot;&quot;</span>, sig<span class="sc">$</span>Term2))</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">1</span>] <span class="st">&quot;E2F1 &gt;&gt; GLI2&quot;</span>                                                   </span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">2</span>] <span class="st">&quot;E2F1 &gt;&gt; RUNX2&quot;</span>                                                  </span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">3</span>] <span class="st">&quot;E2F1 &gt;&gt; HALLMARK_ALLOGRAFT_REJECTION&quot;</span>                           </span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">4</span>] <span class="st">&quot;E2F1 &gt;&gt; PID_SYNDECAN_1_PATHWAY&quot;</span>                                 </span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">5</span>] <span class="st">&quot;GLI2 &gt;&gt; RUNX2&quot;</span>                                                  </span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">6</span>] <span class="st">&quot;GLI2 &gt;&gt; HALLMARK_ALLOGRAFT_REJECTION&quot;</span>                           </span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">7</span>] <span class="st">&quot;GLI2 &gt;&gt; HALLMARK_MITOTIC_SPINDLE&quot;</span>                               </span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">8</span>] <span class="st">&quot;HALLMARK_ALLOGRAFT_REJECTION &gt;&gt; RUNX2&quot;</span>                          </span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="sc">&gt;</span>  [<span class="dv">9</span>] <span class="st">&quot;E2F3 &gt;&gt; RUNX2&quot;</span>                                                  </span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">10</span>] <span class="st">&quot;HALLMARK_MITOTIC_SPINDLE &gt;&gt; RUNX2&quot;</span>                              </span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">11</span>] <span class="st">&quot;GLI2 &gt;&gt; PID_SYNDECAN_1_PATHWAY&quot;</span>                                 </span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">12</span>] <span class="st">&quot;E2F2 &gt;&gt; RUNX2&quot;</span>                                                  </span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">13</span>] <span class="st">&quot;E2F2 &gt;&gt; GLI2&quot;</span>                                                   </span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">14</span>] <span class="st">&quot;GLI2 &gt;&gt; HALLMARK_ESTROGEN_RESPONSE_LATE&quot;</span>                        </span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">15</span>] <span class="st">&quot;PID_SYNDECAN_1_PATHWAY &gt;&gt; RUNX2&quot;</span>                                </span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">16</span>] <span class="st">&quot;HALLMARK_ALLOGRAFT_REJECTION &gt;&gt; PID_SYNDECAN_1_PATHWAY&quot;</span>         </span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">17</span>] <span class="st">&quot;HALLMARK_ESTROGEN_RESPONSE_LATE &gt;&gt; RUNX2&quot;</span>                       </span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">18</span>] <span class="st">&quot;HALLMARK_ALLOGRAFT_REJECTION &gt;&gt; HALLMARK_ESTROGEN_RESPONSE_LATE&quot;</span></span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">19</span>] <span class="st">&quot;HALLMARK_MITOTIC_SPINDLE &gt;&gt; PID_SYNDECAN_1_PATHWAY&quot;</span>             </span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">20</span>] <span class="st">&quot;RUNX2 &gt;&gt; SYNDECAN-1-MEDIATED SIGNALING EVENTS&quot;</span>                  </span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="sc">&gt;</span> [<span class="dv">21</span>] <span class="st">&quot;HALLMARK_ESTROGEN_RESPONSE_LATE &gt;&gt; PID_SYNDECAN_1_PATHWAY&quot;</span></span></code></pre></div>
+</div>
+<div id="interpretation-note" class="section level3">
+<h3>Interpretation note:</h3>
+<p>When Jaccard overlap is low but permutation p-values are strong, the
+coupling is less likely to be a simple gene-overlap artifact and more
+consistent with network-mediated coordination.</p>
+</div>
+<div id="module4-visualization" class="section level3">
+<h3>Module4: Visualization</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Nodes are labeled with shortened names for readability; colors reflect enrichment direction.</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>all_labels <span class="ot">=</span> <span class="fu">unique</span>(<span class="fu">c</span>(sig<span class="sc">$</span>Term1, sig<span class="sc">$</span>Term2))</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>new_labels <span class="ot">=</span> all_labels <span class="sc">|&gt;</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>              stringr<span class="sc">::</span><span class="fu">str_sub</span>(<span class="dv">1</span>, <span class="dv">50</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>              <span class="fu">gsub</span>(<span class="st">&quot;</span><span class="sc">\\</span><span class="st">%.*|</span><span class="sc">\\</span><span class="st">*&quot;</span>, <span class="st">&quot;&quot;</span>, <span class="at">x =</span> _) <span class="sc">|&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>              <span class="fu">gsub</span>(<span class="st">&quot;_&quot;</span>, <span class="st">&quot; &quot;</span>, <span class="at">x =</span> _)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>named_labels <span class="ot">=</span> <span class="fu">setNames</span>(new_labels, all_labels)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>enrichment_df<span class="sc">$</span>new_colors <span class="ot">=</span> <span class="fu">ifelse</span>(enrichment_df<span class="sc">$</span>direction <span class="sc">==</span> <span class="st">&quot;up&quot;</span>, <span class="st">&quot;#CC4248FF&quot;</span>, <span class="st">&quot;#2B0B57FF&quot;</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>idx <span class="ot">=</span> <span class="fu">match</span>(all_labels, enrichment_df<span class="sc">$</span>ID)</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>new_colors <span class="ot">=</span> <span class="fu">setNames</span>(enrichment_df<span class="sc">$</span>new_colors[idx], all_labels)</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co"># visualize_crosstalk() renders a network view of significant couplings.</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="fu">visualize_crosstalk</span>(sig, <span class="at">named_labels =</span> named_labels, <span class="at">named_colors =</span> new_colors)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># scatter_plot() shows scatter plot between jaccard similarity and crosstalk significance. low correlation indicates that inference is not derived by terms similarity..</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">scatter_plot</span>(sig)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="sc">&gt;</span> Warning <span class="cf">in</span> <span class="fu">cor.test.default</span>(result<span class="sc">$</span>x_val, result<span class="sc">$</span>y_val, <span class="at">method =</span> model.fit)<span class="sc">:</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="er">&gt;</span> Cannot compute exact p<span class="sc">-</span>value with ties</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="sc">&gt;</span> <span class="st">`</span><span class="at">geom_smooth()</span><span class="st">`</span> using formula <span class="ot">=</span> <span class="st">&#39;y ~ x&#39;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="sc">&gt;</span> <span class="st">`</span><span class="at">geom_smooth()</span><span class="st">`</span> using formula <span class="ot">=</span> <span class="st">&#39;y ~ x&#39;</span></span></code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+</div>
+<div id="step-by-step-pipeline" class="section level3">
+<h3>Step by step pipeline</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co"># load example data</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>enrichment_df<span class="ot">=</span> CrosstalkX<span class="sc">::</span>enrichment_df</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>expr<span class="ot">=</span> CrosstalkX<span class="sc">::</span>expr <span class="sc">|&gt;</span> <span class="fu">column_to_rownames</span>(<span class="st">&quot;V1&quot;</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co"># Turn enrichment df to list of pathways. each term has gene hits</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>gset_list<span class="ot">=</span> <span class="fu">prepare_sets</span>(enrichment_df, expr)</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>genes<span class="ot">=</span> <span class="fu">unique</span>(<span class="fu">unlist</span>(gset_list))</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co"># Prepare Expression data</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co"># prepare_data function applies z-score normalization, impute within each group using median approach, ensure missing values equally distributed between groups</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co"># Note that it is required to assign group to each sample, e.g. (sample1_Tumor), (sample2_Normal) if there is missing values</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co"># Optionally map gene IDs to gene symbol using biomart</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>group_names<span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Normal&quot;</span>, <span class="st">&quot;Tumor&quot;</span>)</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>z_score<span class="ot">=</span> <span class="fu">prepare_data</span>(expr, group_names, genes)</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co"># Compute mutual infrmation between each gene pairs</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>mi_df<span class="ot">=</span> <span class="fu">compute_mi</span>(z_score, net)</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co"># Compute Crosstalk inference between terms</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>res<span class="ot">=</span> <span class="fu">compute_crosstalk</span>(gset_list, mi_df,<span class="at">iter=</span><span class="dv">100</span>)</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="fu">head</span>(res)</span></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

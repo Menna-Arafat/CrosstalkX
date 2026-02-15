@@ -1,0 +1,53 @@
+Package: CrosstalkX
+Type: Package
+Title: Mutual Information–Based Inference of Pathway Crosstalk
+Version: 1.0.0
+Language: en-US
+Authors@R:
+    person("Menna", "Arafat",
+           role = c("aut", "cre"),
+           email = "mennaarafat.md@gmail.com")
+Description:
+    Provides a computational framework for inferring transcription factor–pathway and
+    pathway–pathway interactions from gene expression data by integrating enrichment-derived
+    gene sets, mutual information-based association measures, and background gene interaction
+    networks. Permutation-based null models are used to assess statistical significance and
+    identify biologically meaningful pathway crosstalk. Additionally, it prioritizes genes of interest
+    using DE-neighborhood enrichment, retaining genes whose network neighborhoods
+    are significantly enriched for DE genes.
+URL: https://github.com/Menna-Arafat/CrosstalkX
+BugReports: https://github.com/Menna-Arafat/CrosstalkX/issues
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+LazyDataCompression: xz
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.4)
+Imports:
+    stats,
+    utils,
+    Matrix,
+    data.table,
+    dplyr,
+    ggplot2,
+    ggraph,
+    igraph,
+    parmigene,
+    reshape2,
+    scales,
+    tibble,
+    tidygraph,
+    decoupleR,
+    clusterProfiler,
+    biomaRt,
+    rlang,
+    pbapply,
+    BiocManager,
+    matrixStats
+Suggests:
+    knitr,
+    rmarkdown,
+    stringr
+VignetteBuilder: knitr
