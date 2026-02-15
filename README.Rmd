@@ -1,5 +1,6 @@
 # CrosstalkX v1.0.0
 author: Menna Arafat
+[![DOI](https://zenodo.org/badge/1158771312.svg)](https://doi.org/10.5281/zenodo.18652755)
 
 ## Under the hood of CrosstalkX
  Pathway enrichment approaches such as ORA and GSEA summarize transcriptomic changes, but
